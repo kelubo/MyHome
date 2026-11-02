@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭主页 · 我的家</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --line:#e5e7eb; --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.6; padding:24px;
+}
+.wrap{max-width:1000px;margin:0 auto}
+header.hero{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+header.hero .logo{font-size:44px}
+header.hero h1{font-size:28px}
+header.hero p{color:var(--muted);font-size:15px}
+.topbar{margin-bottom:28px}
+.topbar a{color:var(--accent);text-decoration:none;font-size:14px}
+section{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px; margin-bottom:20px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+}
+section h2{font-size:19px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+section h2 .ic{font-size:22px}
+section p a{color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.item{
+  background:var(--bg); border:1px solid var(--line); border-radius:10px;
+  padding:14px; transition:.2s;
+}
+.item:hover{border-color:var(--accent);transform:translateY(-2px)}
+.item a{color:var(--text);text-decoration:none;font-weight:600}
+.item span{display:block;color:var(--muted);font-size:13px;font-weight:400;margin-top:4px}
+.imgbox{margin-top:14px;text-align:center}
+.imgbox img{max-width:100%;border:1px solid var(--line);border-radius:10px}
+.cap{color:var(--muted);font-size:13px;margin-top:8px}
+footer{color:var(--muted);font-size:13px;text-align:center;padding:20px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="logo">🏠</div>
+    <div>
+      <h1>我的家 · 家庭信息中心</h1>
+      <p>家庭网络、电子电路项目与文档的统一入口</p>
+    </div>
+  </header>
+  <div class="topbar"><a href="../portal/">← 返回应用门户</a></div>
+
+  <section>
+    <h2><span class="ic">🌐</span> 家庭网络</h2>
+    <p>家里的网络拓扑、路由器与 IP 规划。详见 <a href="../Network/README.md">Network/README.md</a>。</p>
+    <div class="imgbox">
+      <img src="assets/topology.jpg" alt="家庭网络拓扑图">
+      <div class="cap">家庭网络拓扑图（来源：Network/Topology）</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">⚡</span> 电子电路项目</h2>
+    <div class="grid">
+      <div class="item"><a href="../Electrical%20circuit/%E6%B0%94%E4%BD%93%E6%A3%80%E6%B5%8B/CO/">一氧化碳监测</a><span>CO 气体检测</span></div>
+      <div class="item"><a href="../Electrical%20circuit/%E6%B0%94%E4%BD%93%E6%A3%80%E6%B5%8B/H2S/">硫化氢监测</a><span>H2S 气体检测</span></div>
+      <div class="item"><a href="../Electrical%20circuit/%E6%B8%A9%E5%BA%A6%E6%B9%BF%E5%BA%A6%E6%A3%80%E6%B5%8B/">温湿度检测</a><span>温湿度传感器</span></div>
+      <div class="item"><a href="../Electrical%20circuit/%E7%B2%89%E5%B0%98%E6%A3%80%E6%B5%8B/">粉尘检测</a><span>PM2.5 监测</span></div>
+      <div class="item"><a href="../Electrical%20circuit/%E4%BA%BA%E4%BD%93%E6%84%9F%E5%BA%94/">人体感应</a><span>PIR 传感器</span></div>
+      <div class="item"><a href="../Electrical%20circuit/FM_Radio/">FM 收音机</a><span>FM Radio</span></div>
+      <div class="item"><a href="../Electrical%20circuit/%E7%8E%84%E5%85%B3%E7%81%AF/">玄关灯</a><span>智能照明</span></div>
+      <div class="item"><a href="../Electrical%20circuit/common/">共享库</a><span>通用代码库</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="ic">📚</span> 文档中心</h2>
+    <div class="grid">
+      <div class="item"><a href="../docs/%E4%BC%A0%E6%84%9F%E5%99%A8%E9%80%89%E5%9E%8B%E6%8C%87%E5%8D%97.md">传感器选型指南</a></div>
+      <div class="item"><a href="../docs/%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94.md">常见问题解答</a></div>
+      <div class="item"><a href="../docs/%E8%B0%83%E8%AF%95%E6%8C%87%E5%8D%97.md">调试指南</a></div>
+      <div class="item"><a href="../docs/%E9%A1%B9%E7%9B%AE%E6%A8%A1%E6%9D%BF.md">项目模板</a></div>
+      <div class="item"><a href="../projects/README.md">完整项目</a><span>projects/</span></div>
+    </div>
+  </section>
+
+  <footer>MyHome 家庭应用中心 · 本页为信息聚合，详细内容见各原始文档</footer>
+</div>
+</body>
+</html>

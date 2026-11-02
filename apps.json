@@ -1,0 +1,269 @@
+{
+  "portal": {
+    "title": "MyHome 家庭中心",
+    "subtitle": "家里的小工具与应用门户 · 每个应用可独立运行，也可集成于此"
+  },
+  "apps": [
+    {
+      "id": "home",
+      "name": "家庭主页",
+      "description": "家庭网络、电子电路项目与文档的信息中心",
+      "icon": "🏠",
+      "path": "/apps/home/",
+      "standalone": "直接打开 apps/home/index.html，或在仓库根目录运行 python -m http.server 后访问 /apps/home/",
+      "enabled": true
+    },
+    {
+      "id": "music",
+      "name": "音乐播放器",
+      "description": "网络电台 + 本地/NAS 音乐库：目录浏览、流式播放、播放队列、收藏与歌词封面",
+      "icon": "🎵",
+      "path": "/apps/music/",
+      "standalone": "电台可直开 apps/music/index.html；本地/NAS 音乐库需 docker 集成模式（后端扫描文件）",
+      "enabled": true
+    },
+    {
+      "id": "wiki",
+      "name": "家用手册",
+      "description": "纯 Markdown 家庭知识库：WiFi 密码、家电说明书、保修期、物业联系方式等一应收纳，支持分类/搜索/实时预览",
+      "icon": "📖",
+      "path": "/apps/wiki/",
+      "standalone": "需 docker 集成模式（依赖 wiki-api 后端与 wiki 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "album",
+      "name": "家庭相册",
+      "description": "照片与相册管理：上传/拖拽、缩略图网格、灯箱浏览与编辑、相册归类与封面，原图与缩略图存于服务器",
+      "icon": "📷",
+      "path": "/apps/album/",
+      "standalone": "需 docker 集成模式（依赖 album-api 后端与 album 数据库、服务器文件存储）",
+      "enabled": true
+    },
+    {
+      "id": "calendar",
+      "name": "纪念日 · 家庭日历",
+      "description": "生日、纪念日、缴费日、节日等：自动倒计时（每年/每月重复），分类筛选与备注",
+      "icon": "📅",
+      "path": "/apps/calendar/",
+      "standalone": "需 docker 集成模式（依赖 calendar-api 后端与 calendar 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "carlog",
+      "name": "车辆保养记录",
+      "description": "多辆车保养台账：项目/里程/费用/下次保养提醒，按车辆汇总",
+      "icon": "🚗",
+      "path": "/apps/carlog/",
+      "standalone": "需 docker 集成模式（依赖 carlog-api 后端与 carlog 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "pantry",
+      "name": "购物清单 · 冰箱库存",
+      "description": "出门前看一眼：购物清单勾选已买、冰箱库存记录数量与保质期临期提醒",
+      "icon": "🛒",
+      "path": "/apps/pantry/",
+      "standalone": "需 docker 集成模式（依赖 pantry-api 后端与 pantry 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "board",
+      "name": "家庭公告板",
+      "description": "家庭通知、留言与分工：可置顶、按标签着色，首页随时查看",
+      "icon": "📌",
+      "path": "/apps/board/",
+      "standalone": "需 docker 集成模式（依赖 board-api 后端与 board 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "docs",
+      "name": "家庭文档归档",
+      "description": "合同、证件、保修卡、说明书扫描件集中归档：分类管理 + 文件上传与预览",
+      "icon": "📁",
+      "path": "/apps/docs/",
+      "standalone": "需 docker 集成模式（依赖 docs-api 后端、docs 数据库与服务器文件存储）",
+      "enabled": true
+    },
+    {
+      "id": "subs",
+      "name": "订阅 · 会员续费",
+      "description": "视频会员、宽带、保险等连续扣费：记录金额与下次续费日，到期自动提醒、月度/年度花费汇总",
+      "icon": "💳",
+      "path": "/apps/subs/",
+      "standalone": "需 docker 集成模式（依赖 subs-api 后端与 subs 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "tasks",
+      "name": "家庭任务看板",
+      "description": "家庭待办分工：待办/进行中/已完成三列看板，可指派负责人、设优先级与截止日",
+      "icon": "✅",
+      "path": "/apps/tasks/",
+      "standalone": "需 docker 集成模式（依赖 tasks-api 后端与 tasks 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "health",
+      "name": "健康档案",
+      "description": "家庭成员就诊、用药、体征（体重/血压等）、疫苗记录：按成员与类型筛选",
+      "icon": "🩺",
+      "path": "/apps/health/",
+      "standalone": "需 docker 集成模式（依赖 health-api 后端与 health 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "recipes",
+      "name": "菜谱大全",
+      "description": "家庭菜谱收藏：分类、搜索、食材与步骤，做每周菜单时直接取用",
+      "icon": "🍳",
+      "path": "/apps/recipes/",
+      "standalone": "需 docker 集成模式（依赖 recipes-api 后端与 recipes 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "menu",
+      "name": "每周菜单",
+      "description": "按周安排早/午/晚/加餐；一键把本周菜谱食材汇总进「购物清单」",
+      "icon": "🍽",
+      "path": "/apps/menu/",
+      "standalone": "需 docker 集成模式（依赖 menu-api 后端与 menu 数据库；联动 pantry 购物清单）",
+      "enabled": true
+    },
+    {
+      "id": "ledger",
+      "name": "家庭账本",
+      "description": "家庭共享收支记账：按月统计收入/支出/结余与分类占比",
+      "icon": "💰",
+      "path": "/apps/ledger/",
+      "standalone": "需 docker 集成模式（依赖 ledger-api 后端与 ledger 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "assets",
+      "name": "家电 · 资产管理",
+      "description": "家电/数码/家具登记：购买信息与保修到期提醒（临近高亮）",
+      "icon": "🔧",
+      "path": "/apps/assets/",
+      "standalone": "需 docker 集成模式（依赖 assets-api 后端与 assets 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "books",
+      "name": "图书管理",
+      "description": "家庭藏书登记：书名/作者/分类/阅读状态与评分，借阅状态（在库/借出）与出版日期，想读·在读·已读一目了然",
+      "icon": "📚",
+      "path": "/apps/books/",
+      "standalone": "需 docker 集成模式（依赖 books-api 后端与 books 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "pets",
+      "name": "宠物照护",
+      "description": "毛孩子资料与日常照护：品种/生日/体重，喂食/驱虫/疫苗/体检记录",
+      "icon": "🐾",
+      "path": "/apps/pets/",
+      "standalone": "需 docker 集成模式（依赖 pets-api 后端与 pets 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "vault",
+      "name": "家庭密码箱",
+      "description": "账号密码集中保管：敏感字段 Fernet 加密存储，分类管理与一键复制",
+      "icon": "🔐",
+      "path": "/apps/vault/",
+      "standalone": "需 docker 集成模式（依赖 vault-api 后端与 vault 数据库；密钥在 ./data/vault）",
+      "enabled": true
+    },
+    {
+      "id": "medkit",
+      "name": "家庭药箱",
+      "description": "常备药品登记：药名/规格/数量与有效期，临期（≤90天）/过期自动高亮提醒",
+      "icon": "💊",
+      "path": "/apps/medkit/",
+      "standalone": "需 docker 集成模式（依赖 medkit-api 后端与 medkit 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "films",
+      "name": "影视清单",
+      "description": "电影/剧集/综艺观看清单：想看·在看·已看，平台/评分/进度一目了然",
+      "icon": "🎬",
+      "path": "/apps/films/",
+      "standalone": "需 docker 集成模式（依赖 films-api 后端与 films 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "travel",
+      "name": "旅游地图",
+      "description": "旅行计划与每日游记，外加中国足迹地图：按省/市/区标记去过的地点，地图着色一目了然",
+      "icon": "✈️",
+      "path": "/apps/travel/",
+      "standalone": "需 docker 集成模式（依赖 travel-api 后端与 travel 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "plants",
+      "name": "绿植养护",
+      "description": "家中绿植档案与养护：品种/位置/浇水施肥周期，到期自动提示该浇水该施肥",
+      "icon": "🌿",
+      "path": "/apps/plants/",
+      "standalone": "需 docker 集成模式（依赖 plants-api 后端与 plants 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "homeenv",
+      "name": "家庭环境记录",
+      "description": "按房间记录温度/湿度/PM2.5/CO₂：各房间最新读数与历史趋势，长期跟踪居家环境",
+      "icon": "🌡️",
+      "path": "/apps/homeenv/",
+      "standalone": "需 docker 集成模式（依赖 homeenv-api 后端与 homeenv 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "repair",
+      "name": "房屋维修记录",
+      "description": "水电/电器/墙面/管道等维修台账：费用、状态与下次复检提醒（临期/逾期高亮）",
+      "icon": "🔧",
+      "path": "/apps/repair/",
+      "standalone": "需 docker 集成模式（依赖 repair-api 后端与 repair 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "growth",
+      "name": "孩子成长日志",
+      "description": "按孩子记录身高体重、疫苗与里程碑：时光轴串联成长点滴，多孩子分账管理",
+      "icon": "🧸",
+      "path": "/apps/growth/",
+      "standalone": "需 docker 集成模式（依赖 growth-api 后端与 growth 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "energy",
+      "name": "家庭能耗记录",
+      "description": "每月水/电/燃气用量与费用登记：按年份查看开销趋势与分类汇总",
+      "icon": "⚡",
+      "path": "/apps/energy/",
+      "standalone": "需 docker 集成模式（依赖 energy-api 后端与 energy 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "insurance",
+      "name": "家庭保险保单",
+      "description": "车险/医疗险/房屋险等保单台账：到期前自动提醒续保，年度保费汇总",
+      "icon": "🛡️",
+      "path": "/apps/insurance/",
+      "standalone": "需 docker 集成模式（依赖 insurance-api 后端与 insurance 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "certs",
+      "name": "家庭证件档案",
+      "description": "身份证/护照/房产证等证照登记：到期日临期/过期自动高亮提醒（扫描件存「文档归档」）",
+      "icon": "🪪",
+      "path": "/apps/certs/",
+      "standalone": "需 docker 集成模式（依赖 certs-api 后端与 certs 数据库）",
+      "enabled": true
+    }
+  ]
+}

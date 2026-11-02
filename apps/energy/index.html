@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭能耗记录 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#10b981; --accent2:#059669; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar input,.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.stats{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:96px;text-align:center}
+.stat .n{font-size:21px;font-weight:800}
+.stat .l{font-size:12px;color:var(--muted)}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(16,185,129,.12)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card .title{font-size:16px;font-weight:700;flex:1;line-height:1.3}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#d1fae5;color:#047857;font-weight:600}
+.metrics{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.metric{font-size:13px}
+.metric b{font-size:18px;color:var(--accent)}
+.metric span{color:var(--muted);font-size:11px;display:block}
+.meta{font-size:12px;color:var(--muted);margin-top:6px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">⚡</div>
+  <h1>家庭能耗记录</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="搜备注" style="min-width:160px">
+  <select id="filterCategory"><option value="">全部类型</option><option>水</option><option>电</option><option>燃气</option></select>
+  <select id="filterYear"><option value="">全部年份</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新增记录</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新增记录</h3>
+    <div class="row">
+      <div class="field"><label>类型 *</label>
+        <select id="mCategory"><option>电</option><option>水</option><option>燃气</option></select>
+      </div>
+      <div class="field"><label>记录日期 *</label><input type="date" id="mDate"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>用量</label><input type="number" step="0.01" id="mUsage" placeholder="如 320"></div>
+      <div class="field"><label>费用 ¥</label><input type="number" step="0.01" id="mCost" value="0"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>单位</label><input type="text" id="mUnit" placeholder="按类型自动填充"></div>
+      <div class="field"><label></label><span style="font-size:12px;color:var(--muted)">留空则按类型默认（电=度/水=吨/燃气=立方米）</span></div>
+    </div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="如 上月用电 / 本月偏高"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/energy/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let records = [];
+let editingId = null;
+const UNIT = {水:'吨',电:'度',燃气:'立方米'};
+
+async function load(){
+  const q=$('search').value.trim(), c=$('filterCategory').value, y=$('filterYear').value;
+  const qs=[]; if(q) qs.push('q='+encodeURIComponent(q)); if(c) qs.push('category='+encodeURIComponent(c)); if(y) qs.push('year='+encodeURIComponent(y));
+  try{
+    records = await api('/records'+(qs.length?'?'+qs.join('&'):''));
+    hideBanner();
+  }catch(e){
+    records=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 energy-api 后端与 energy 数据库）。');
+  }
+  render();
+}
+async function loadStats(){
+  try{
+    const y=$('filterYear').value;
+    const st=await api('/stats'+(y?'?year='+encodeURIComponent(y):''));
+    const bc=st.by_category;
+    let html = statBox(st.total,'记录数') + statBox('¥'+(st.total_cost!=null?st.total_cost:0),'总费用');
+    for(const c of ['电','水','燃气']){
+      if(bc[c]) html += statBox(bc[c].usage+bc[c].unit||'', c+'用量');
+    }
+    $('stats').innerHTML = html;
+  }catch(e){}
+}
+async function loadYears(){
+  try{
+    const ys=await api('/years');
+    const sel=$('filterYear');
+    ys.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y+' 年'; sel.appendChild(o); });
+  }catch(e){}
+}
+function statBox(n,l,color){
+  return '<div class="stat"><div class="n" style="color:'+(color||'var(--accent)')+'">'+n+'</div><div class="l">'+l+'</div></div>';
+}
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!records.length){ box.innerHTML='<div class="empty">还没有能耗记录。<br>点击右上角「＋ 新增记录」，登记每月水/电/燃气的用量与费用，按年份查看开销趋势。</div>'; return; }
+  records.forEach(r=>{
+    const el=document.createElement('div'); el.className='card';
+    const metrics=[];
+    if(r.usage!=null) metrics.push('<div class="metric"><b>'+r.usage+'</b><span>'+(r.unit||'')+'</span></div>');
+    if(r.cost!=null) metrics.push('<div class="metric"><b>¥'+(r.cost||0)+'</b><span>费用</span></div>');
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge"></span></div>'+
+      (metrics.length?'<div class="metrics"></div>':'')+
+      '<div class="meta"></div>'+
+      (r.notes?'<div class="meta" style="margin-top:4px"></div>':'');
+    el.querySelector('.title').textContent=r.record_date;
+    el.querySelector('.badge').textContent=r.category;
+    if(metrics.length) el.querySelector('.metrics').innerHTML=metrics.join('');
+    el.querySelector('.meta').textContent='记录日期';
+    const metas=el.querySelectorAll('.meta');
+    if(r.notes) metas[metas.length-1].textContent='📝 '+r.notes;
+    el.onclick=()=>openModal(r);
+    box.appendChild(el);
+  });
+}
+function openModal(r){
+  editingId = r ? r.id : null;
+  $('modalTitle').textContent = r ? '编辑记录' : '新增记录';
+  $('mCategory').value = r?(r.category||'电'):'电';
+  $('mDate').value = r?(r.record_date||''):'';
+  $('mUsage').value = r?(r.usage!=null?r.usage:''):'';
+  $('mCost').value = r?(r.cost||0):0;
+  $('mUnit').value = r?(r.unit||''):'';
+  $('mNotes').value = r?(r.notes||''):'';
+  $('mDelete').style.display = r?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+$('mSave').onclick=async()=>{
+  const payload={
+    category:$('mCategory').value, date:$('mDate').value,
+    usage:$('mUsage').value===''?'':parseFloat($('mUsage').value),
+    cost:parseFloat($('mCost').value||'0')||0,
+    unit:$('mUnit').value.trim(), notes:$('mNotes').value.trim()
+  };
+  if(!payload.date){ showBanner('记录日期必填'); return; }
+  try{
+    if(editingId) await api('/records/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show'); await load(); await loadStats();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该记录？')) return;
+  try{ await api('/records/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await load(); await loadStats(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+$('mCategory').onchange=()=>{ if(!$('mUnit').value) $('mUnit').value=UNIT[$('mCategory').value]||''; };
+$('search').oninput=load;
+$('filterCategory').onchange=load;
+$('filterYear').onchange=async()=>{ await load(); await loadStats(); };
+loadYears(); loadStats(); load();
+</script>
+</body>
+</html>

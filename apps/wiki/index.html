@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家用手册 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+  --code-bg:#eef2ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+header.top{display:flex;align-items:center;gap:12px;padding:16px 22px;
+  background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;
+  padding:10px 22px;font-size:13px;display:none}
+.layout{display:flex;align-items:stretch;min-height:calc(100vh - 58px)}
+.sidebar{width:280px;flex-shrink:0;border-right:1px solid var(--line);
+  background:var(--card);padding:16px;display:flex;flex-direction:column;gap:12px}
+.search{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+  font-size:14px;outline:none;background:#fafbff}
+.search:focus{border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#eef2ff;color:#374151;border:1px solid transparent;padding:5px 10px;
+  border-radius:999px;font-size:12px;cursor:pointer;transition:.12s}
+.chip:hover{background:#dbe4ff}
+.chip.active{background:var(--accent);color:#fff}
+.list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;margin:-4px}
+.item{background:#fafbff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  cursor:pointer;transition:.12s}
+.item:hover{border-color:var(--accent);background:#f0f5ff}
+.item.active{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.item .t{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .m{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:14px;line-height:1.9}
+.main{flex:1;padding:22px 26px;overflow:auto}
+.view .meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.badge{background:#eef2ff;color:#374151;font-size:12px;padding:3px 9px;border-radius:999px}
+.tag{background:#f3f4f6;color:var(--muted);font-size:12px;padding:2px 8px;border-radius:6px}
+.updated{color:var(--muted);font-size:12px;margin-left:auto}
+.view h2{font-size:22px;margin-bottom:14px}
+.view .toolbar{display:flex;gap:8px;margin-bottom:16px}
+.content{line-height:1.85;font-size:15px;color:#27313f;max-width:860px}
+.content h1{font-size:25px;margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.content h2{font-size:20px;margin:16px 0 8px}
+.content h3{font-size:17px;margin:14px 0 6px}
+.content h4,.content h5,.content h6{margin:12px 0 6px}
+.content p{margin:10px 0}
+.content ul,.content ol{margin:10px 0 10px 24px}
+.content li{margin:4px 0}
+.content blockquote{margin:12px 0;padding:8px 14px;border-left:4px solid var(--accent);
+  background:#f7f9ff;color:#44506a;border-radius:0 8px 8px 0}
+.content code{background:var(--code-bg);padding:2px 6px;border-radius:6px;font-size:13px;
+  font-family:"SFMono-Regular",Consolas,monospace}
+.content pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;
+  overflow:auto;margin:12px 0}
+.content pre code{background:none;color:inherit;padding:0}
+.content img{max-width:100%;border-radius:8px;margin:8px 0}
+.content hr{border:none;border-top:1px solid var(--line);margin:18px 0}
+.content table{border-collapse:collapse;margin:12px 0;width:100%;max-width:860px}
+.content th,.content td{border:1px solid var(--line);padding:7px 10px;font-size:14px;text-align:left}
+.content th{background:#f3f4f6}
+.content a{color:var(--accent)}
+/* 编辑 */
+.edit .field{margin-bottom:12px}
+.edit label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.edit input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+  font-size:15px;outline:none;background:#fafbff}
+.edit input[type=text]:focus{border-color:var(--accent)}
+.edit .row2{display:flex;gap:12px}
+.edit .row2 .field{flex:1}
+.editor{display:flex;gap:14px;align-items:stretch}
+.editor textarea{flex:1;min-height:460px;width:100%;padding:14px;border-radius:10px;
+  border:1px solid var(--line);font-family:"SFMono-Regular",Consolas,monospace;font-size:14px;
+  line-height:1.6;resize:vertical;outline:none;background:#fafbff}
+.editor textarea:focus{border-color:var(--accent)}
+.editor .preview{flex:1;min-height:460px;overflow:auto;padding:14px;border-radius:10px;
+  border:1px dashed var(--line);background:#fff}
+.edit .toolbar{display:flex;gap:8px;margin-top:14px}
+.attach-list{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.attach-row{display:flex;align-items:center;gap:8px;background:#f3f4f6;border-radius:8px;padding:7px 10px;font-size:13px}
+.attach-row .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attach-row .act{display:flex;gap:6px;flex-shrink:0}
+.attach-row button{font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--text)}
+.attach-row button:hover{border-color:var(--accent);color:var(--accent)}
+.attach-row button.del:hover{border-color:var(--danger);color:var(--danger)}
+.attach-hint{font-size:12px;color:var(--muted);margin-top:6px}
+.datalist{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (max-width:820px){
+  .layout{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:42vh}
+  .editor{flex-direction:column}
+  .editor textarea,.editor .preview{min-height:240px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">📖</div>
+  <h1>家用手册</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+  <button class="btn" id="newBtn">＋ 新建</button>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <input class="search" id="search" placeholder="搜索标题 / 内容 / 标签…">
+    <div class="chips" id="cats"></div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="empty" id="placeholder">从左侧选择一篇手册，或点击右上角「＋ 新建」。</div>
+
+    <!-- 查看 -->
+    <section class="view" id="view" style="display:none">
+      <div class="meta">
+        <span class="badge" id="vCat"></span>
+        <span id="vTags"></span>
+        <span class="updated" id="vUpdated"></span>
+      </div>
+      <h2 id="vTitle"></h2>
+      <div class="toolbar">
+        <button class="btn" id="editBtn">✎ 编辑</button>
+        <button class="btn danger" id="delBtn">🗑 删除</button>
+      </div>
+      <div class="content" id="vContent"></div>
+      <div id="attachView"></div>
+    </section>
+
+    <!-- 编辑 -->
+    <section class="edit" id="edit" style="display:none">
+      <div class="field">
+        <label>标题</label>
+        <input type="text" id="eTitle" placeholder="例如：家庭 WiFi 与宽带账号">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>分类</label>
+          <input type="text" id="eCat" placeholder="例如：网络" list="catlist">
+          <datalist id="catlist"></datalist>
+        </div>
+        <div class="field">
+          <label>标签（逗号分隔）</label>
+          <input type="text" id="eTags" placeholder="例如：账号,密码">
+        </div>
+      </div>
+      <div class="field">
+        <label>内容（Markdown）</label>
+        <div class="editor">
+          <textarea id="eContent" placeholder="在此用 Markdown 记录内容…"></textarea>
+          <div class="preview content" id="ePreview"></div>
+        </div>
+      </div>
+      <div class="field" id="attachEdit" style="display:none">
+        <label>附件（PDF 说明书、图片等）</label>
+        <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.svg,.txt,.md,.csv,.doc,.docx,.xls,.xlsx,.zip">
+        <div class="attach-list" id="attachList"></div>
+        <div class="attach-hint">保存页面后即可上传。图片点「插入图片」写入正文，其它文件点「插入链接」。</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="saveBtn">💾 保存</button>
+        <button class="btn ghost" id="cancelBtn">取消</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="assets/markdown.js"></script>
+<script>
+const API = '/apps/wiki/api';
+let pages = [];
+let cats = [];
+let current = null;     // 当前查看/编辑的页对象
+let filterCat = '';
+let query = '';
+
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+
+function showBanner(msg){
+  banner.textContent = msg;
+  banner.style.display = 'block';
+}
+function hideBanner(){ banner.style.display = 'none'; }
+
+function fmtDate(s){
+  if(!s) return '';
+  return s.replace('T',' ').replace(/\.\d+$/,'').replace(/[Z+].*$/,'');
+}
+function esc(s){ return String(s==null?'':s); }
+
+async function api(path, opts){
+  const r = await fetch(API + path, opts);
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function loadCategories(){
+  try{
+    cats = await api('/categories');
+  }catch(e){ cats = []; }
+  const box = $('cats');
+  box.innerHTML = '';
+  const all = document.createElement('div');
+  all.className = 'chip' + (filterCat==='' ? ' active':'');
+  all.textContent = '全部';
+  all.onclick = () => { filterCat=''; renderCats(); loadPages(); };
+  box.appendChild(all);
+  cats.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'chip' + (filterCat===c.category ? ' active':'');
+    el.textContent = c.category + ' (' + c.count + ')';
+    el.onclick = () => { filterCat = (filterCat===c.category ? '' : c.category); renderCats(); loadPages(); };
+    box.appendChild(el);
+  });
+  // datalist 供编辑时选择已有分类
+  const dl = $('catlist');
+  dl.innerHTML = '';
+  cats.forEach(c => { const o=document.createElement('option'); o.value=c.category; dl.appendChild(o); });
+}
+function renderCats(){ loadCategories(); }
+
+async function loadPages(){
+  let path = '/pages?';
+  if(filterCat) path += 'category=' + encodeURIComponent(filterCat) + '&';
+  if(query) path += 'q=' + encodeURIComponent(query);
+  try{
+    pages = await api(path);
+    hideBanner();
+  }catch(e){
+    showBanner('⚠️ 无法连接后端 API（家用手册需以 docker 集成模式启动，包含 wiki-api 后端与数据库）。');
+    pages = [];
+  }
+  renderList();
+}
+
+function renderList(){
+  const list = $('list');
+  list.innerHTML = '';
+  if(!pages.length){
+    list.innerHTML = '<div class="empty">没有匹配的手册。<br>点击右上角「＋ 新建」添加。</div>';
+    return;
+  }
+  pages.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'item' + (current && current.id===p.id ? ' active':'');
+    el.innerHTML = '<div class="t"></div><div class="m"></div>';
+    el.querySelector('.t').textContent = p.title;
+    el.querySelector('.m').textContent = p.category + (p.excerpt ? ' · ' + p.excerpt : '');
+    el.onclick = () => selectPage(p.id);
+    list.appendChild(el);
+  });
+}
+
+async function selectPage(id){
+  try{
+    current = await api('/pages/' + id);
+  }catch(e){
+    showBanner('加载失败：' + e.message);
+    return;
+  }
+  showView();
+  renderList();
+}
+
+function showView(){
+  $('placeholder').style.display = 'none';
+  $('edit').style.display = 'none';
+  $('view').style.display = 'block';
+  $('vTitle').textContent = current.title;
+  $('vCat').textContent = current.category || '未分类';
+  const tg = $('vTags');
+  tg.innerHTML = '';
+  (current.tags||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(t=>{
+    const s=document.createElement('span'); s.className='tag'; s.textContent=t; tg.appendChild(s);
+  });
+  $('vUpdated').textContent = '更新于 ' + fmtDate(current.updated_at);
+  $('vContent').innerHTML = (window.renderMarkdown ? renderMarkdown(current.content) : '<pre>'+esc(current.content)+'</pre>');
+  loadAttach(current.id);
+}
+
+function showEdit(){
+  $('placeholder').style.display = 'none';
+  $('view').style.display = 'none';
+  $('edit').style.display = 'block';
+  $('eTitle').value = current ? current.title : '';
+  $('eCat').value = current ? current.category : '';
+  $('eTags').value = current ? current.tags : '';
+  $('eContent').value = current ? current.content : '';
+  updatePreview();
+  if(current && current.id){
+    $('attachEdit').style.display = 'block';
+    loadAttach(current.id);
+  } else {
+    $('attachEdit').style.display = 'none';
+    const al = $('attachList'); if(al) al.innerHTML = '';
+  }
+  $('eTitle').focus();
+}
+
+function updatePreview(){
+  const txt = $('eContent').value;
+  $('ePreview').innerHTML = (window.renderMarkdown ? renderMarkdown(txt) : '<pre>'+esc(txt)+'</pre>');
+}
+
+$('newBtn').onclick = () => { current = null; showEdit(); };
+$('editBtn').onclick = () => showEdit();
+$('cancelBtn').onclick = () => { if(current) showView(); else { $('edit').style.display='none'; $('placeholder').style.display='block'; } };
+$('eContent').addEventListener('input', updatePreview);
+
+$('saveBtn').onclick = async () => {
+  const payload = {
+    title: $('eTitle').value.trim() || '未命名',
+    category: $('eCat').value.trim() || '未分类',
+    tags: $('eTags').value.trim(),
+    content: $('eContent').value
+  };
+  try{
+    if(current && current.id){
+      current = await api('/pages/' + current.id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    }else{
+      const created = await api('/pages', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      current = created;
+    }
+    await loadCategories();
+    await loadPages();
+    showView();
+    renderList();
+  }catch(e){
+    showBanner('保存失败：' + e.message);
+  }
+};
+
+$('delBtn').onclick = async () => {
+  if(!current) return;
+  if(!confirm('确定删除《' + current.title + '》？此操作不可撤销。')) return;
+  try{
+    await api('/pages/' + current.id, {method:'DELETE'});
+    current = null;
+    await loadCategories();
+    await loadPages();
+    $('view').style.display='none';
+    $('placeholder').style.display='block';
+  }catch(e){
+    showBanner('删除失败：' + e.message);
+  }
+};
+
+const fileUrl = (aid) => API + '/attachments/' + aid + '/file';
+let attachCache = [];
+
+function fmtSize(b){
+  if(b < 1024) return b + ' B';
+  if(b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+async function loadAttach(pid){
+  try{ attachCache = await api('/pages/' + pid + '/attachments'); }
+  catch(e){ attachCache = []; }
+  renderAttach();
+}
+
+function renderAttach(){
+  const el = $('attachList');
+  if(el){
+    el.innerHTML = '';
+    attachCache.forEach(a => {
+      const row = document.createElement('div'); row.className = 'attach-row';
+      const isImg = (a.mime||'').indexOf('image/') === 0;
+      const nm = document.createElement('span'); nm.className = 'nm';
+      nm.textContent = a.name + ' (' + fmtSize(a.size) + ')';
+      const acts = document.createElement('span'); acts.className = 'act';
+      const b1 = document.createElement('button');
+      if(isImg){ b1.textContent = '插入图片'; b1.onclick = () => insertAtCursor('![' + a.name + '](' + fileUrl(a.id) + ')'); }
+      else { b1.textContent = '插入链接'; b1.onclick = () => insertAtCursor('[' + a.name + '](' + fileUrl(a.id) + ')'); }
+      const b2 = document.createElement('button'); b2.className = 'del'; b2.textContent = '删除';
+      b2.onclick = () => delAttach(a.id);
+      acts.appendChild(b1); acts.appendChild(b2);
+      row.appendChild(nm); row.appendChild(acts);
+      el.appendChild(row);
+    });
+  }
+  const vw = $('attachView');
+  if(vw){
+    vw.innerHTML = '';
+    if(attachCache.length){
+      const h = document.createElement('div');
+      h.style.cssText = 'font-size:13px;color:var(--muted);margin:18px 0 8px';
+      h.textContent = '📎 附件';
+      vw.appendChild(h);
+      attachCache.forEach(a => {
+        const a2 = document.createElement('a');
+        a2.href = fileUrl(a.id); a2.target = '_blank'; a2.rel = 'noopener';
+        a2.className = 'tag';
+        a2.style.cssText = 'display:inline-block;margin:0 6px 6px 0;text-decoration:none;cursor:pointer';
+        a2.textContent = '📎 ' + a.name;
+        vw.appendChild(a2);
+      });
+    }
+  }
+}
+
+function insertAtCursor(text){
+  const ta = $('eContent');
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  const v = ta.value;
+  ta.value = v.slice(0, s) + text + v.slice(e);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = s + text.length;
+  updatePreview();
+}
+
+$('fileInput').addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if(!files || !files.length) return;
+  if(!current || !current.id){ alert('请先保存页面，再上传附件。'); e.target.value = ''; return; }
+  for(const file of files){
+    const fd = new FormData();
+    fd.append('file', file);
+    try{
+      await fetch(API + '/pages/' + current.id + '/attachments', {method:'POST', body:fd});
+    }catch(err){ showBanner('上传失败：' + err.message); }
+  }
+  e.target.value = '';
+  await loadAttach(current.id);
+});
+
+async function delAttach(aid){
+  if(!confirm('删除该附件？此操作不可撤销。')) return;
+  try{
+    await api('/attachments/' + aid, {method:'DELETE'});
+    await loadAttach(current.id);
+  }catch(e){ showBanner('删除失败：' + e.message); }
+}
+
+let t;
+$('search').addEventListener('input', (e) => {
+  clearTimeout(t);
+  t = setTimeout(() => { query = e.target.value.trim(); loadPages(); }, 250);
+});
+
+// 初始化
+loadCategories().then(loadPages);
+</script>
+</body>
+</html>

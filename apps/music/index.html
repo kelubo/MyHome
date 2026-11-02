@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音乐播放器 · MyHome</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#171a21; --panel2:#1f232c; --text:#e7e9ee; --muted:#9aa3b2;
+  --accent:#1db954; --accent2:#169c46; --line:#262b35; --danger:#e0564f; --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:96px}
+a{color:var(--accent)}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 18px}
+header.top{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+header.top h1{font-size:22px}
+.logo{font-size:30px}
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.tab{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  padding:9px 16px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+input.search{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--text);font-size:14px;margin-bottom:14px;outline:none}
+input.search:focus{border-color:var(--accent)}
+.row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;cursor:pointer;transition:.12s}
+.row:hover{background:var(--panel2)}
+.row.playing{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+.row .meta{flex:1;min-width:0}
+.row .title{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sub{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .acts{display:flex;gap:6px;flex-shrink:0}
+button.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px;transition:.12s}
+button.btn:hover{border-color:var(--accent)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.icon{background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 6px}
+button.icon:hover{color:var(--text)}
+button.icon.on{color:var(--accent)}
+.folder .title{font-weight:600}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:12px;font-size:13px;color:var(--muted)}
+.crumbs .c{cursor:pointer}
+.crumbs .c:hover{color:var(--text)}
+.crumbs .sep{opacity:.5}
+.libs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.lib{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+  padding:7px 13px;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600}
+.lib.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lib.disabled{opacity:.4;cursor:not-allowed}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;line-height:1.9}
+.hint{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.7}
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--panel2);
+  border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;
+  transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+/* 播放条 */
+.player{position:fixed;left:0;right:0;bottom:0;height:84px;background:#0b0d11;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:16px;padding:0 18px;z-index:40}
+.player .cover{width:56px;height:56px;border-radius:8px;background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;flex-shrink:0}
+.player .cover img{width:100%;height:100%;object-fit:cover}
+.player .pinfo{flex:1;min-width:0}
+.player .ptitle{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player .psub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.player .ctrls{display:flex;align-items:center;gap:10px}
+.player .seek{display:flex;align-items:center;gap:10px;flex:2;min-width:120px}
+.player input[type=range]{width:100%;accent-color:var(--accent)}
+.player .time{font-size:12px;color:var(--muted);min-width:84px;text-align:center}
+.play-btn{width:46px;height:46px;border-radius:50%;background:var(--accent);border:none;color:#fff;
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.play-btn:hover{background:var(--accent2)}
+.vol{display:flex;align-items:center;gap:6px;width:120px}
+/* 播放位置选择器 */
+.target{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.target .lbl{font-size:12px;color:var(--muted);white-space:nowrap}
+select.mini{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  font-size:12px;border-radius:8px;padding:6px 8px;outline:none;cursor:pointer}
+select.mini:focus{border-color:var(--accent)}
+/* 抽屉 */
+.drawer{position:fixed;top:0;right:0;height:100%;width:340px;background:var(--panel);
+  border-left:1px solid var(--line);transform:translateX(100%);transition:.25s;z-index:45;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer .dhead{padding:16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.drawer .dbody{flex:1;overflow:auto;padding:8px}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:44;display:none}
+.mask.open{display:block}
+.lyrics{white-space:pre-wrap;font-size:14px;line-height:1.9;color:var(--text);padding:10px 4px}
+.tag{font-size:11px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+  padding:2px 7px;border-radius:6px;margin-left:6px}
+/* NAS 弹窗 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;display:none;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  width:460px;max-width:92vw;max-height:88vh;overflow:auto;padding:18px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.field input,.field select{width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--text);font-size:14px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.nasrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;
+  background:var(--panel2);margin-top:8px;font-size:13px}
+.nasrow .st{margin-left:auto;font-size:12px;white-space:nowrap}
+.st.ok{color:var(--accent)} .st.err{color:var(--danger)} .st.warn{color:#e0a85a}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">🎵</div>
+    <h1>音乐播放器</h1>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="radio">📻 电台</div>
+    <div class="tab" data-tab="library">📁 音乐库</div>
+    <div class="tab" data-tab="fav">❤️ 收藏</div>
+  </div>
+
+  <!-- 电台 -->
+  <section id="tab-radio">
+    <input class="search" id="radioSearch" placeholder="搜索电台名称 / 类型…">
+    <div class="card"><div id="radioList"></div></div>
+    <div style="margin-top:12px" class="card" id="addRadioBox">
+      <div class="hint">添加自定义电台（流地址，例如本地/国内电台或家里 NAS 上的音频流）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input class="search" style="margin:0;flex:1;min-width:160px" id="nrName" placeholder="电台名称">
+        <input class="search" style="margin:0;flex:2;min-width:220px" id="nrUrl" placeholder="流地址 URL">
+        <input class="search" style="margin:0;flex:1;min-width:120px" id="nrGenre" placeholder="类型（可选）">
+        <button class="btn primary" id="nrAdd">添加</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 音乐库 -->
+  <section id="tab-library" style="display:none">
+    <div class="libs" id="libChips"></div>
+    <div style="margin-bottom:12px">
+      <button class="btn" id="manageNasBtn">⚙ 管理 NAS 音乐源</button>
+    </div>
+    <div class="card">
+      <div class="crumbs" id="crumbs"></div>
+      <div id="browserBtns" style="margin-bottom:10px;display:flex;gap:8px">
+        <button class="btn" id="addFolderQueue">把本文件夹全部加入队列</button>
+      </div>
+      <div id="browser"></div>
+    </div>
+  </section>
+
+  <!-- 收藏 -->
+  <section id="tab-fav" style="display:none">
+    <div class="card"><div id="favList"></div></div>
+  </section>
+</div>
+
+<!-- 播放条 -->
+<div class="player">
+  <div class="cover" id="pCover">🎵</div>
+  <div class="pinfo">
+    <div class="ptitle" id="pTitle">未在播放</div>
+    <div class="psub" id="pSub">选择一首歌曲或电台开始</div>
+  </div>
+  <div class="target">
+    <span class="lbl">播放位置</span>
+    <select id="playTarget" class="mini">
+      <option value="browser">💻 此设备</option>
+      <option value="server">🔊 服务器音箱</option>
+    </select>
+    <select id="serverDevice" class="mini" style="display:none"></select>
+  </div>
+  <div class="ctrls">
+    <button class="icon" id="prevBtn" title="上一首">⏮</button>
+    <button class="play-btn" id="playBtn" title="播放/暂停">▶</button>
+    <button class="icon" id="nextBtn" title="下一首">⏭</button>
+  </div>
+  <div class="seek">
+    <span class="time" id="curTime">0:00</span>
+    <input type="range" id="seek" min="0" max="1000" value="0" disabled>
+    <span class="time" id="durTime">0:00</span>
+  </div>
+  <div class="vol">
+    <span class="icon">🔊</span>
+    <input type="range" id="vol" min="0" max="100" value="80">
+  </div>
+  <div class="ctrls">
+    <button class="icon" id="favBtn" title="收藏">🤍</button>
+    <button class="icon" id="lyricsBtn" title="歌词">📝</button>
+    <button class="icon" id="queueBtn" title="播放队列">☰</button>
+  </div>
+</div>
+
+<!-- 队列 / 歌词抽屉 -->
+<div class="mask" id="mask"></div>
+<div class="drawer" id="drawer">
+  <div class="dhead"><strong id="drawerTitle">播放队列</strong>
+    <button class="icon" id="drawerClose">✕</button></div>
+  <div class="dbody" id="drawerBody"></div>
+</div>
+
+<audio id="audio"></audio>
+<div class="toast" id="toast"></div>
+
+<!-- NAS 管理弹窗 -->
+<div class="modal" id="nasModal">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <strong>管理 NAS 音乐源</strong>
+      <button class="icon" id="nasClose">✕</button>
+    </div>
+    <div class="hint">在 Linux 服务器上挂载 NAS 共享（SMB/CIFS 或 NFS），挂载后会出现在「音乐库」里。<br>
+      挂载需要服务器容器具备 SYS_ADMIN 权限（已在 docker-compose 配置）。配置与挂载状态会存入数据库。</div>
+    <div class="field"><label>名称（显示在音乐库里）</label><input id="nasName" placeholder="例如：家庭NAS"></div>
+    <div class="field"><label>协议</label>
+      <select id="nasProto"><option value="smb">SMB / CIFS（群晖/威联通/Windows 共享）</option><option value="nfs">NFS</option></select>
+    </div>
+    <div class="field"><label>主机地址</label><input id="nasHost" placeholder="例如 192.168.1.50 或 nas.local"></div>
+    <div class="field"><label>共享名 / 导出路径</label><input id="nasShare" placeholder="SMB: Music ｜ NFS: /export/Music"></div>
+    <div class="field"><label>用户名（SMB 访客/匿名可留空）</label><input id="nasUser" placeholder="可选"></div>
+    <div class="field"><label>密码</label><input id="nasPass" type="password" placeholder="可选"></div>
+    <button class="btn primary" id="nasMountBtn" style="width:100%;margin-top:4px">挂载</button>
+    <div id="nasList" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- HLS 支持：让 .m3u8 电台在桌面 Chrome/Edge（不原生支持 HLS）也能播放；手机/苹果设备原生支持 -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+<script>
+const API = '/apps/music/api';
+const audio = document.getElementById('audio');
+let backendOK = false;
+let stations = [];
+let libraries = [];
+let curLib = null, curPath = '';
+let browserFiles = [];   // 当前目录文件(用于队列)
+let queue = [];          // [{type, ...}]
+let qIndex = -1;
+let current = null;      // 当前播放项
+let favSet = new Set();  // 收藏标识
+let favList = [];
+let playbackTarget = 'browser';   // 'browser'（此设备）| 'server'（服务器音箱）
+let serverDevice = 'default';
+let serverEnding = false;
+let lastGlobal = null;          // 最近一次全局互斥状态（来自 /player/global）
+let thisClientPlaying = false;  // 本客户端当前是否在播放（用于互斥上报）
+let serverMutedNotified = false; // 是否已提示“服务器正在全屋播放，本机已停止”
+// 每个浏览器标签一个独立 client_id（sessionStorage 按标签隔离）；多标签可同时播放
+let clientId = (function(){
+  let id = sessionStorage.getItem('myhome_client_id');
+  if(!id){
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+        : 'c' + Math.random().toString(36).slice(2) + Date.now();
+    sessionStorage.setItem('myhome_client_id', id);
+  }
+  return id;
+})();
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+function fmt(sec){if(!isFinite(sec))return '0:00';sec=Math.floor(sec);const m=Math.floor(sec/60),s=sec%60;
+  return m+':'+(s<10?'0':'')+s;}
+function favKey(it){return (it.source||'')+'|'+(it.lib_key||'')+'|'+(it.path||'');}
+async function apiGet(p){const r=await fetch(API+p);if(!r.ok)throw new Error('http '+r.status);return r.json();}
+
+/* ── 初始化 ── */
+(async function init(){
+  audio.volume = 0.8;
+  try{
+    const h = await apiGet('/health');
+    backendOK = true;
+    libraries = h.libraries || [];
+  }catch(e){ backendOK = false; }
+  await loadRadio();
+  if(backendOK) await loadLibraries();
+  bindUI();
+  if(backendOK) startGlobalPolling();   // 全局播放锁轮询：防止多客户端/服务器同时出声
+})();
+
+/* ── 电台 ── */
+async function loadRadio(){
+  const box = document.getElementById('radioList');
+  if(backendOK){
+    try{ stations = await apiGet('/stations'); }
+    catch(e){ stations = await fallbackStations(); }
+  } else {
+    stations = await fallbackStations();
+  }
+  renderRadio('');
+}
+async function fallbackStations(){
+  let list=[];
+  try{ const r=await fetch('/apps/music/stations.json'); if(r.ok) list=(await r.json()).stations||[]; }catch(e){}
+  try{ const c=JSON.parse(localStorage.getItem('myhome_radio_custom')||'[]'); list=list.concat(c); }catch(e){}
+  return list;
+}
+function renderRadio(q){
+  q=(q||'').toLowerCase();
+  const box=document.getElementById('radioList');
+  const list=stations.filter(s=>(s.name+' '+(s.genre||'')).toLowerCase().includes(q));
+  if(!list.length){box.innerHTML='<div class="empty">没有匹配的电台</div>';return;}
+  box.innerHTML='';
+  list.forEach((s,i)=>{
+    const div=document.createElement('div');div.className='row';
+    if(current&&current.type==='radio'&&current.url===s.url)div.classList.add('playing');
+    div.innerHTML=`<div class="meta"><div class="title">${esc(s.name)}</div>
+      <div class="sub">${esc(s.genre||'电台')}${s.custom?'<span class="tag">自定义</span>':''}</div></div>
+      <div class="acts">
+        <button class="btn primary">播放</button>
+        <button class="icon ${isFav('radio','',''+s.url)?'on':''}" title="收藏">${isFav('radio','',''+s.url)?'❤️':'🤍'}</button>
+        ${s.custom?'<button class="icon" title="删除">🗑</button>':''}
+      </div>`;
+    div.querySelector('.primary').onclick=()=>playRadio(s);
+    const heart=div.querySelector('.icon');
+    if(s.custom){
+      const del=div.querySelectorAll('.icon')[1];
+      del.onclick=()=>removeCustomStation(s);
+      heart.onclick=()=>toggleFav({source:'radio',lib_key:'',path:''+s.url,title:s.name,artist:'',album:''});
+    }else{
+      heart.onclick=()=>toggleFav({source:'radio',lib_key:'',path:''+s.url,title:s.name,artist:'',album:''});
+    }
+    box.appendChild(div);
+  });
+}
+function esc(t){return (''+t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+async function removeCustomStation(s){
+  if(backendOK){
+    try{ const all=await apiGet('/stations'); const rec=all.find(x=>x.url===s.url&&x.custom);
+      if(rec){await fetch(API+'/stations/'+rec.id,{method:'DELETE'});} }catch(e){}
+  }
+  let c=[];try{c=JSON.parse(localStorage.getItem('myhome_radio_custom')||'[]');}catch(e){}
+  c=c.filter(x=>x.url!==s.url);localStorage.setItem('myhome_radio_custom',JSON.stringify(c));
+  await loadRadio();toast('已删除');
+}
+document.getElementById('nrAdd').onclick=async()=>{
+  const name=document.getElementById('nrName').value.trim();
+  const url=document.getElementById('nrUrl').value.trim();
+  const genre=document.getElementById('nrGenre').value.trim();
+  if(!name||!url){toast('请填写名称和地址');return;}
+  if(backendOK){
+    try{ await fetch(API+'/stations',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,url,genre})}); }catch(e){}
+  }
+  let c=[];try{c=JSON.parse(localStorage.getItem('myhome_radio_custom')||'[]');}catch(e){}
+  c.push({name,url,genre,custom:true});localStorage.setItem('myhome_radio_custom',JSON.stringify(c));
+  document.getElementById('nrName').value='';document.getElementById('nrUrl').value='';
+  document.getElementById('nrGenre').value='';
+  await loadRadio();toast('已添加电台');
+};
+
+/* ── 音乐库 ── */
+async function loadLibraries(){
+  const chips=document.getElementById('libChips');
+  chips.innerHTML='';
+  if(!libraries.length){chips.innerHTML='<div class="empty">后端未配置音乐库</div>';return;}
+  libraries.forEach(l=>{
+    const b=document.createElement('div');b.className='lib'+(l.available?'':' disabled');
+    b.textContent=l.label+(l.available?'':'（未挂载）');
+    if(l.available){b.onclick=()=>selectLib(l.key);}
+    chips.appendChild(b);
+  });
+  const first=libraries.find(l=>l.available);
+  if(first)selectLib(first.key); else {document.getElementById('browser').innerHTML='<div class="empty">请在 docker-compose 中挂载本地/NAS 音乐目录</div>';}
+}
+async function selectLib(key){curLib=key;curPath='';
+  document.querySelectorAll('.lib').forEach((el,i)=>{});
+  // highlight
+  const libs=document.querySelectorAll('.lib');
+  libraries.forEach((l,i)=>{if(l.key===key)libs[i].classList.add('active');else libs[i].classList.remove('active');});
+  await browse(key,'');
+}
+async function browse(lib,path){
+  curLib=lib;curPath=path;
+  const box=document.getElementById('browser');
+  if(!backendOK){box.innerHTML='<div class="empty">音乐库需要后端服务（docker 集成模式）才能浏览本地/NAS 文件。<br>请用 <code>docker compose up -d</code> 启动。</div>';return;}
+  try{
+    const data=await apiGet('/browse?lib='+encodeURIComponent(lib)+'&path='+encodeURIComponent(path));
+    renderCrumbs(lib,path);
+    browserFiles=data.files.map(f=>({name:f.name,path:(path?path+'/':'')+f.name}));
+    let html='';
+    data.dirs.forEach(d=>{html+=`<div class="row folder" data-dir="${esc(d.name)}">
+      <div class="meta"><div class="title">📁 ${esc(d.name)}</div></div>
+      <div class="acts"><button class="btn">打开</button></div></div>`;});
+    data.files.forEach(f=>{const full=(path?path+'/':'')+f.name;
+      html+=`<div class="row" data-file="${esc(full)}">
+        <div class="meta"><div class="title">🎵 ${esc(f.name)}</div>
+        <div class="sub">${f.ext.toUpperCase()} · ${fmtSize(f.size)}</div></div>
+        <div class="acts">
+          <button class="btn primary" data-act="play">播放</button>
+          <button class="btn" data-act="queue">＋队列</button>
+          <button class="icon" data-act="fav">🤍</button>
+        </div></div>`;});
+    box.innerHTML=html||'<div class="empty">此文件夹没有音频文件</div>';
+    box.querySelectorAll('[data-dir]').forEach(el=>el.onclick=()=>browse(lib,path?path+'/'+el.dataset.dir:el.dataset.dir));
+    box.querySelectorAll('[data-file]').forEach(el=>{
+      const full=el.dataset.file;
+      el.querySelector('[data-act="play"]').onclick=(e)=>{e.stopPropagation();playTrack(lib,full);};
+      el.querySelector('[data-act="queue"]').onclick=(e)=>{e.stopPropagation();addToQueue({type:'track',lib_key:lib,path:full});toast('已加入队列');};
+      el.querySelector('[data-act="fav"]').onclick=(e)=>{e.stopPropagation();toggleFav({source:lib,lib_key:lib,path:full,title:baseName(full)});};
+      el.onclick=()=>playTrack(lib,full);
+    });
+  }catch(e){box.innerHTML='<div class="empty">读取目录失败：'+esc(e.message)+'</div>';}
+}
+function renderCrumbs(lib,path){
+  const c=document.getElementById('crumbs');
+  const label=(libraries.find(l=>l.key===lib)||{}).label||lib;
+  let parts=[`<span class="c" data-p="">${esc(label)}</span>`];
+  if(path){let acc='';path.split('/').forEach(seg=>{acc=acc?acc+'/'+seg:seg;parts.push('<span class="sep">/</span>');
+    parts.push(`<span class="c" data-p="${esc(acc)}">${esc(seg)}</span>`);});}
+  c.innerHTML=parts.join('');
+  c.querySelectorAll('.c').forEach(el=>el.onclick=()=>browse(lib,el.dataset.p));
+}
+function fmtSize(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';
+  if(b<1073741824)return (b/1048576).toFixed(1)+' MB';return (b/1073741824).toFixed(2)+' GB';}
+function baseName(p){return p.split('/').pop();}
+document.getElementById('addFolderQueue').onclick=()=>{
+  if(!browserFiles.length){toast('当前文件夹无音频');return;}
+  browserFiles.forEach(f=>addToQueue({type:'track',lib_key:curLib,path:f.path}));
+  toast('已加入 '+browserFiles.length+' 首');
+};
+
+/* ── 播放控制 ── */
+/* 播放目标：此设备(浏览器) / 服务器音箱（二选一） */
+function startPlayback(item){
+  if(item.type==='track') item.source=item.lib_key;
+  current=item; serverEnding=false;
+  if(playbackTarget==='server') playOnServer(item);
+  else playOnBrowser(item);
+  renderNowPlaying(); renderQueue();
+  renderRadio(document.getElementById('radioSearch').value);
+}
+let hlsInstance = null;
+function destroyHls(){
+  if(hlsInstance){ try{ hlsInstance.destroy(); }catch(e){} hlsInstance = null; }
+}
+// 兼容直链(MP3/AAC)与 HLS(.m3u8)：HLS 在桌面端经 hls.js 播放，移动端/苹果原生支持
+function attachStream(url){
+  destroyHls();
+  const isHls = /\.m3u8(\?.*)?$/i.test(url);
+  const nativeHls = audio.canPlayType('application/vnd.apple.mpegurl');
+  if(isHls && window.Hls && Hls.isSupported() && !nativeHls){
+    hlsInstance = new Hls();
+    hlsInstance.loadSource(url);
+    hlsInstance.attachMedia(audio);
+    hlsInstance.on(Hls.Events.ERROR, function(e, data){
+      if(data && data.fatal){ destroyHls(); toast('该 HLS 电台加载失败（部分 CDN 在桌面端受限，可用手机端播放）'); }
+    });
+  } else {
+    audio.src = url;   // 直链流，或原生支持 HLS 的浏览器（Safari / iOS / Android Chrome）
+  }
+}
+function playOnBrowser(item){
+  audio.pause();
+  thisClientPlaying = true;
+  serverMutedNotified = false;
+  if(item.type==='radio'){ attachStream(item.url); }
+  else{ destroyHls(); audio.src=mediaUrl(item.lib_key,item.path); }
+  audio.play().catch(()=>{ if(item.type==='radio') toast('该电台可能无法播放，可改用自定义电台'); });
+  setPlaying(true);
+  // 立即上报并检测是否需让位于服务器（服务器优先）：若服务器在放则本机静音
+  fetch(API+'/player/global',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({client_id:clientId, active:true})})
+    .then(r=>r.json())
+    .then(g=>{ if(g.client_must_mute && !audio.paused){ audio.pause();
+      toast('服务器正在全屋播放，本机已停止'); serverMutedNotified=true; } })
+    .catch(()=>{});
+}
+async function playOnServer(item){
+  let body;
+  if(item.type==='radio'){ body={kind:'radio', url:item.url, name:item.name}; }
+  else{ body={kind:'file', lib_key:item.lib_key, path:item.path, name:item.title||baseName(item.path)}; }
+  if(serverDevice && serverDevice!=='default') body.device=serverDevice;
+  setPlaying(true);
+  try{
+    const r=await fetch(API+'/player/play',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ toast('服务器播放失败：'+(j.error||r.status)); }
+    else if(j.error){ toast('服务器播放失败：'+j.error); }
+  }catch(e){ toast('服务器请求失败，请确认后端在线'); }
+  // 全局轮询已在 init 启动，无需单独启停
+}
+function playRadio(s){
+  startPlayback({type:'radio',name:s.name,url:s.url});
+}
+function playTrack(lib,path){
+  const item={type:'track',lib_key:lib,path:path,title:baseName(path)};
+  // 若已在队列中则跳转，否则先入队再播放
+  let idx=queue.findIndex(q=>q.type==='track'&&q.lib_key===lib&&q.path===path);
+  if(idx<0){addToQueue(item);idx=queue.length-1;}
+  playQueueItem(idx);
+}
+function mediaUrl(lib,path){return API+'/media?lib='+encodeURIComponent(lib)+'&path='+encodeURIComponent(path);}
+function playQueueItem(idx){
+  if(idx<0||idx>=queue.length)return;
+  qIndex=idx;
+  startPlayback(queue[idx]);
+  renderQueue();
+}
+function addToQueue(item){
+  if(queue.some(q=>sameItem(q,item)))return;
+  queue.push(item);renderQueue();
+  if(qIndex<0){qIndex=0;}
+}
+function sameItem(a,b){if(a.type!==b.type)return false;
+  if(a.type==='radio')return a.url===b.url;return a.lib_key===b.lib_key&&a.path===b.path;}
+function nextTrack(){if(qIndex+1<queue.length)playQueueItem(qIndex+1);else toast('队列结束');}
+function prevTrack(){
+  if(qIndex>0) playQueueItem(qIndex-1);
+  else {
+    if(playbackTarget==='server'){ fetch(API+'/player/seek',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seconds:0})}); }
+    else audio.currentTime=0;
+  }
+}
+function setPlaying(on){document.getElementById('playBtn').textContent=on?'⏸':'▶';}
+function renderNowPlaying(){
+  const cv=document.getElementById('pCover'),ti=document.getElementById('pTitle'),su=document.getElementById('pSub');
+  document.getElementById('favBtn').className='icon'+(current&&isFav(current.source||'radio',current.lib_key||'',current.path||current.url)?' on':'');
+  if(!current){ti.textContent='未在播放';su.textContent='选择一首歌曲或电台开始';cv.textContent='🎵';return;}
+  if(current.type==='radio'){
+    ti.textContent=current.name||'电台';su.textContent='● 直播流';
+    cv.textContent='📻';cv.querySelector('img')&&(cv.innerHTML='📻');
+    document.getElementById('seek').disabled=true;
+    document.getElementById('lyricsBtn').style.display='none';
+  }else{
+    ti.textContent=current.title||baseName(current.path);
+    su.textContent=current.artist?current.artist+' · '+(current.album||''):(current.album||baseName(current.path));
+    document.getElementById('seek').disabled=false;
+    document.getElementById('lyricsBtn').style.display='';
+    loadMeta(current.lib_key,current.path);
+  }
+  updateFavBtn();
+}
+async function loadMeta(lib,path){
+  const cv=document.getElementById('pCover');
+  try{
+    const m=await apiGet('/track/meta?lib='+encodeURIComponent(lib)+'&path='+encodeURIComponent(path));
+    if(m.title)document.getElementById('pTitle').textContent=m.title;
+    if(m.artist||m.album)document.getElementById('pSub').textContent=
+      [m.artist,m.album].filter(Boolean).join(' · ');
+    if(m.cover){cv.innerHTML='<img src="'+API+'/track/cover?lib='+encodeURIComponent(lib)+'&path='+encodeURIComponent(path)+'">';}
+    else{cv.textContent='🎵';}
+    document.getElementById('lyricsBtn').style.display=m.lyrics?'':'none';
+  }catch(e){cv.textContent='🎵';}
+}
+function updateFavBtn(){
+  const on=current&&isFav(current.source||'radio',current.lib_key||'',current.path||current.url);
+  document.getElementById('favBtn').textContent=on?'❤️':'🤍';
+  document.getElementById('favBtn').className='icon'+(on?' on':'');
+}
+
+/* 音频事件 */
+audio.addEventListener('timeupdate',()=>{
+  if(current&&current.type==='track'){
+    document.getElementById('curTime').textContent=fmt(audio.currentTime);
+    if(audio.duration)document.getElementById('seek').value=Math.floor(audio.currentTime/audio.duration*1000);
+  }
+});
+audio.addEventListener('loadedmetadata',()=>{
+  if(current&&current.type==='track')document.getElementById('durTime').textContent=fmt(audio.duration);
+});
+audio.addEventListener('play',()=>{ setPlaying(true); if(playbackTarget==='browser') thisClientPlaying=true; });
+audio.addEventListener('pause',()=>{ setPlaying(false); if(playbackTarget==='browser') thisClientPlaying=false; });
+audio.addEventListener('ended',()=>nextTrack());
+document.getElementById('playBtn').onclick=async()=>{
+  if(!current)return;
+  if(playbackTarget==='server'){
+    if(!lastGlobal || !lastGlobal.server_active){ playOnServer(current); return; }
+    await fetch(API+'/player/'+(lastGlobal.server_paused?'resume':'pause'),{method:'POST'});
+  }else{
+    if(audio.paused) audio.play(); else audio.pause();
+  }
+};
+document.getElementById('nextBtn').onclick=nextTrack;
+document.getElementById('prevBtn').onclick=prevTrack;
+document.getElementById('seek').oninput=function(){
+  const frac=this.value/1000;
+  if(playbackTarget==='server'){
+    const d=lastGlobal?lastGlobal.duration:0;
+    if(d) fetch(API+'/player/seek',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seconds:frac*d})});
+  } else if(audio.duration){ audio.currentTime=frac*audio.duration; }
+};
+document.getElementById('vol').oninput=function(){
+  const v=this.value;
+  if(playbackTarget==='server'){ fetch(API+'/player/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:+v})}); }
+  else { audio.volume=v/100; }
+};
+
+/* ── 播放位置（此设备 / 服务器音箱） ── */
+document.getElementById('playTarget').onchange=async function(){
+  const t=this.value;
+  if(t==='server' && !backendOK){ toast('服务器播放需要后端（docker 集成模式）'); this.value='browser'; return; }
+  playbackTarget=t;
+  if(t==='server'){
+    audio.pause();                      // 本机停止；服务器优先，由轮询确保客户端静音
+    thisClientPlaying=false;
+    document.getElementById('serverDevice').style.display='';
+    await loadServerDevices();
+  } else {
+    try{ await fetch(API+'/player/stop',{method:'POST'}); }catch(e){}  // 停掉服务器全屋播放
+    document.getElementById('serverDevice').style.display='none';
+  }
+};
+document.getElementById('serverDevice').onchange=function(){ serverDevice=this.value; if(current) playOnServer(current); };
+async function loadServerDevices(){
+  const sel=document.getElementById('serverDevice');
+  try{
+    const devs=await apiGet('/player/devices');
+    sel.innerHTML='';
+    devs.forEach(d=>{const o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.appendChild(o);});
+    serverDevice=sel.value||'default';
+  }catch(e){ sel.innerHTML='<option>无法获取设备</option>'; }
+}
+/* 全局播放互斥轮询：
+   - 上报本客户端是否正在播放（心跳），并取回全局状态；
+   - 服务器在放（client_must_mute）时，本机若是客户端播放则静音（不允许服务器与客户端并存）；
+   - 多个客户端之间互不限制，可同时播放。 */
+function startGlobalPolling(){ if(window.__gp) clearInterval(window.__gp); window.__gp=setInterval(globalPoll,1500); }
+async function globalPoll(){
+  if(!backendOK) return;
+  let g;
+  try{
+    const r=await fetch(API+'/player/global',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({client_id:clientId, active:thisClientPlaying})});
+    if(!r.ok) return;
+    g=await r.json();
+  }catch(e){ return; }
+  lastGlobal=g;
+  // 互斥：服务器在放 → 本机若是客户端播放则静音（服务器优先）
+  if(g.client_must_mute && playbackTarget==='browser'){
+    if(!audio.paused) audio.pause();
+    if(!serverMutedNotified){ toast('服务器正在全屋播放，本机已停止'); serverMutedNotified=true; }
+  } else {
+    serverMutedNotified=false;
+  }
+  // 播放位置为服务器时，刷新底部播放条的进度/播放键状态
+  if(playbackTarget==='server'){
+    applyServerStatus(g);
+  }
+}
+function applyServerStatus(g){
+  const pb=document.getElementById('playBtn');
+  pb.textContent = g.server_active ? (g.server_paused?'▶':'⏸') : '▶';
+  if(g.server_kind==='track'){
+    document.getElementById('seek').disabled = !g.server_active;
+    document.getElementById('curTime').textContent = fmt(g.position||0);
+    document.getElementById('durTime').textContent = fmt(g.duration||0);
+    if(g.duration) document.getElementById('seek').value = Math.floor((g.position||0)/g.duration*1000);
+    if(g.server_active && g.duration && (g.duration-(g.position||0))<1.2 && !serverEnding){ serverEnding=true; nextTrack(); }
+  } else if(g.server_kind==='radio'){
+    document.getElementById('seek').disabled=true;
+  }
+  if(g.error) toast(g.error);
+}
+
+/* ── 收藏 ── */
+function isFav(source,lib_key,path){return favSet.has(source+'|'+lib_key+'|'+path);}
+async function toggleFav(item){
+  const key=favKey(item);
+  if(isFav(item.source,item.lib_key,item.path)){
+    if(backendOK){try{const list=await apiGet('/favorites');const rec=list.find(x=>favKey(x)===key);
+      if(rec)await fetch(API+'/favorites/'+rec.id,{method:'DELETE'});}catch(e){}}
+    favSet.delete(key);
+  }else{
+    if(backendOK){try{await fetch(API+'/favorites',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(item)});}catch(e){}}
+    favSet.add(key);toast('已收藏');
+  }
+  updateFavBtn();renderRadio(document.getElementById('radioSearch').value);
+  if(document.getElementById('tab-fav').style.display!=='none')loadFavorites();
+}
+async function loadFavorites(){
+  const box=document.getElementById('favList');
+  if(!backendOK){box.innerHTML='<div class="empty">收藏需要后端（docker 集成模式）支持</div>';return;}
+  try{
+    favList=await apiGet('/favorites');favSet=new Set(favList.map(favKey));
+    if(!favList.length){box.innerHTML='<div class="empty">还没有收藏</div>';return;}
+    box.innerHTML='';
+    favList.forEach(f=>{
+      const div=document.createElement('div');div.className='row';
+      const isTrack=f.source!=='radio';
+      div.innerHTML=`<div class="meta"><div class="title">${esc(f.title||baseName(f.path))}</div>
+        <div class="sub">${esc(f.artist||'')}${f.album?' · '+esc(f.album):''}${isTrack?'<span class="tag">'+esc(f.source)+'</span>':'<span class="tag">电台</span>'}</div></div>
+        <div class="acts">
+          <button class="btn primary">播放</button>
+          <button class="icon" title="移除">🗑</button>
+        </div>`;
+      div.querySelector('.primary').onclick=()=>{if(isTrack)playTrack(f.lib_key,f.path);else playRadio({name:f.title,url:f.path});};
+      div.querySelector('.icon').onclick=async()=>{await fetch(API+'/favorites/'+f.id,{method:'DELETE'});await loadFavorites();};
+      box.appendChild(div);
+    });
+  }catch(e){box.innerHTML='<div class="empty">读取收藏失败</div>';}
+}
+
+/* ── 队列抽屉 ── */
+function renderQueue(){
+  const body=document.getElementById('drawerBody');
+  if(!queue.length){body.innerHTML='<div class="empty">队列为空</div>';return;}
+  body.innerHTML='';
+  queue.forEach((q,i)=>{
+    const div=document.createElement('div');div.className='row'+(i===qIndex?' playing':'');
+    const name=q.type==='radio'?q.name:q.title||baseName(q.path);
+    const sub=q.type==='radio'?'电台':(q.artist||q.source);
+    div.innerHTML=`<div class="meta"><div class="title">${esc(name)}</div><div class="sub">${esc(sub||'')}</div></div>
+      <div class="acts"><button class="icon" title="移除">🗑</button></div>`;
+    div.querySelector('.meta').onclick=()=>playQueueItem(i);
+    div.querySelector('.icon').onclick=()=>{queue.splice(i,1);if(qIndex>=i)qIndex--;if(qIndex<0&&queue.length)qIndex=0;renderQueue();};
+    body.appendChild(div);
+  });
+}
+function openDrawer(title){document.getElementById('drawerTitle').textContent=title;
+  document.getElementById('drawer').classList.add('open');document.getElementById('mask').classList.add('open');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('mask').classList.remove('open');}
+document.getElementById('queueBtn').onclick=()=>{renderQueue();openDrawer('播放队列');};
+document.getElementById('lyricsBtn').onclick=async()=>{
+  const body=document.getElementById('drawerBody');
+  if(current&&current.type==='track'){
+    try{const txt=await(await fetch(API+'/track/lyrics?lib='+encodeURIComponent(current.lib_key)+'&path='+encodeURIComponent(current.path))).text();
+      body.innerHTML='<div class="lyrics">'+esc(txt)+'</div>';openDrawer('歌词');}
+    catch(e){body.innerHTML='<div class="empty">暂无歌词</div>';openDrawer('歌词');}
+  }
+};
+document.getElementById('drawerClose').onclick=closeDrawer;
+document.getElementById('mask').onclick=closeDrawer;
+document.getElementById('favBtn').onclick=()=>{if(current)toggleFav({source:current.source||'radio',lib_key:current.lib_key||'',path:current.path||current.url,title:current.title||current.name,artist:current.artist||'',album:current.album||''});};
+
+/* ── 标签页 & 搜索 ── */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');
+  const name=t.dataset.tab;
+  document.getElementById('tab-radio').style.display=name==='radio'?'':'none';
+  document.getElementById('tab-library').style.display=name==='library'?'':'none';
+  document.getElementById('tab-fav').style.display=name==='fav'?'':'none';
+  if(name==='library'&&backendOK)loadLibraries();
+  if(name==='fav')loadFavorites();
+});
+document.getElementById('radioSearch').oninput=function(){renderRadio(this.value);};
+
+function bindUI(){/* 事件大多已内联绑定，这里留作扩展 */}
+
+/* ── NAS 管理 ── */
+document.getElementById('manageNasBtn').onclick=openNasModal;
+document.getElementById('nasClose').onclick=closeNasModal;
+document.getElementById('nasModal').onclick=function(e){if(e.target===this)closeNasModal();};
+async function openNasModal(){await loadNas();document.getElementById('nasModal').classList.add('open');}
+function closeNasModal(){document.getElementById('nasModal').classList.remove('open');}
+async function loadNas(){
+  const box=document.getElementById('nasList');
+  try{
+    const list=await apiGet('/nas');
+    if(!list.length){box.innerHTML='<div class="empty">还没有 NAS 音乐源，填上方表单添加一个</div>';return;}
+    box.innerHTML='';
+    list.forEach(n=>{
+      const st=n.status==='mounted'?'<span class="st ok">已挂载</span>'
+              :n.status==='error'?'<span class="st err" title="'+esc(n.error||'')+'">失败</span>'
+              :'<span class="st warn">'+esc(n.status||'')+'</span>';
+      const div=document.createElement('div');div.className='nasrow';
+      div.innerHTML=`<span>${esc(n.name)} <span class="tag">${n.protocol.toUpperCase()}</span> ${esc(n.host)}/${esc(n.share)}</span>${st}
+        <button class="icon" data-act="del" title="删除并卸载">🗑</button>`;
+      div.querySelector('[data-act="del"]').onclick=async()=>{
+        if(!confirm('删除该 NAS 配置并卸载？'))return;
+        try{await fetch(API+'/nas/'+encodeURIComponent(n.name),{method:'DELETE'});}catch(e){}
+        await loadNas();await loadLibraries();
+      };
+      box.appendChild(div);
+    });
+  }catch(e){box.innerHTML='<div class="empty">读取失败：'+esc(e.message)+'</div>';}
+}
+document.getElementById('nasMountBtn').onclick=async()=>{
+  const name=document.getElementById('nasName').value.trim();
+  const protocol=document.getElementById('nasProto').value;
+  const host=document.getElementById('nasHost').value.trim();
+  const share=document.getElementById('nasShare').value.trim();
+  const username=document.getElementById('nasUser').value.trim();
+  const password=document.getElementById('nasPass').value;
+  if(!name||!host||!share){toast('请填写名称、主机、共享');return;}
+  try{
+    const r=await fetch(API+'/nas/mount',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,protocol,host,share,username,password})});
+    const j=await r.json();
+    if(!r.ok){toast('挂载失败：'+(j.error||r.status));}
+    else if(j.status==='error'){toast('挂载失败：'+(j.error||''));}
+    else{toast('已挂载 '+name);await loadNas();await loadLibraries();}
+  }catch(e){toast('请求失败');}
+};
+</script>
+</body>
+</html>

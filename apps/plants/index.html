@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>绿植养护 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#16a34a; --accent2:#15803d; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar select{padding:9px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;background:#fafbff;outline:none;min-width:160px}
+.toolbar .spacer{flex:1}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:1fr;gap:16px;max-width:860px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.panel h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.plant-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.plant-avatar{font-size:44px}
+.plant-name{font-size:22px;font-weight:800}
+.plant-sub{color:var(--muted);font-size:13px}
+.due{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;margin-left:6px}
+.due.water{background:#dbeafe;color:#2563eb}
+.due.fert{background:#fef3c7;color:#d97706}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
+.kv .item{background:#fafbff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.kv .k{font-size:11px;color:var(--muted)}
+.kv .v{font-size:14px;font-weight:600}
+.care-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.care-form input,.care-form select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.care-list{display:flex;flex-direction:column;gap:8px}
+.care-item{display:flex;align-items:flex-start;gap:10px;background:#fafbff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.care-item .date{font-size:13px;color:var(--muted);min-width:96px}
+.care-item .badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#dcfce7;color:var(--accent2);font-weight:600;white-space:nowrap}
+.care-item .note{flex:1;font-size:13px;line-height:1.5}
+.care-item .del{color:var(--danger);cursor:pointer;border:none;background:transparent;font-size:13px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:40px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🌿</div>
+  <h1>绿植养护</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <select id="plantSelect"><option value="">— 选择植物 —</option></select>
+  <button class="btn ghost" id="editPlantBtn">✎ 编辑</button>
+  <button class="btn danger" id="delPlantBtn">🗑 删除</button>
+  <div class="spacer"></div>
+  <button class="btn" id="addPlantBtn">＋ 新增植物</button>
+</div>
+
+<div class="wrap" id="wrap"></div>
+
+<div class="modal" id="plantModal">
+  <div class="modal-box">
+    <h3 id="plantModalTitle">新增植物</h3>
+    <div class="row">
+      <div class="field"><label>名称 *</label><input type="text" id="pName" placeholder="如：绿萝"></div>
+      <div class="field"><label>品种 / 科属</label><input type="text" id="pSpecies" placeholder="如：绿萝属"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>摆放位置</label><input type="text" id="pLocation" placeholder="如：客厅北窗"></div>
+      <div class="field"><label>入手日期</label><input type="date" id="pAcquired"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>浇水周期(天)</label><input type="number" id="pWater" value="7" min="0"></div>
+      <div class="field"><label>施肥周期(天)</label><input type="number" id="pFert" value="30" min="0"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>上次浇水</label><input type="date" id="pLastWater"></div>
+      <div class="field"><label>上次施肥</label><input type="date" id="pLastFert"></div>
+    </div>
+    <div class="field"><label>备注</label><textarea id="pNotes" placeholder="光照、习性等"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="pSave">💾 保存</button>
+      <button class="btn ghost" id="pCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/plants/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function esc(s){ const d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
+function needWater(p){ return p.water_interval>0 && p.days_since_water!=null && p.days_since_water >= p.water_interval; }
+function needFert(p){ return p.fertilize_interval>0 && p.days_since_fertilize!=null && p.days_since_fertilize >= p.fertilize_interval; }
+
+let plants = [];
+let selectedId = null;
+let care = [];
+
+async function loadPlants(){
+  try{
+    plants = await api('/plants'); hideBanner();
+    const sel=$('plantSelect'); sel.innerHTML='<option value="">— 选择植物 —</option>';
+    plants.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.name+(p.species?('（'+p.species+'）'):''); sel.appendChild(o); });
+    if(plants.length && selectedId===null) selectedId=plants[0].id;
+    if(!plants.find(p=>p.id===selectedId)) selectedId = plants.length?plants[0].id:null;
+    sel.value = selectedId||'';
+  }catch(e){
+    plants=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 plants-api 后端与 plants 数据库）。');
+  }
+  render();
+}
+async function loadCare(){
+  if(!selectedId){ care=[]; render(); return; }
+  try{ care = await api('/plants/'+selectedId+'/care'); }catch(e){ care=[]; }
+  render();
+}
+function render(){
+  const wrap=$('wrap'); wrap.innerHTML='';
+  if(!plants.length){
+    wrap.innerHTML='<div class="empty">还没有登记植物。<br>点击右上角「＋ 新增植物」，记录品种、摆放位置与浇水/施肥周期，到期会自动提示。</div>';
+    return;
+  }
+  const p = plants.find(x=>x.id===selectedId);
+  if(!p) return;
+  const badge = (needWater(p)?'<span class="due water">💧 该浇水</span>':'') + (needFert(p)?'<span class="due fert">🌱 该施肥</span>':'');
+  const kv=[];
+  if(p.species) kv.push(['品种',p.species]);
+  if(p.location) kv.push(['位置',p.location]);
+  if(p.acquired_date) kv.push(['入手',p.acquired_date]);
+  if(p.water_interval) kv.push(['浇水周期',p.water_interval+' 天']);
+  if(p.fertilize_interval) kv.push(['施肥周期',p.fertilize_interval+' 天']);
+  if(p.last_water) kv.push(['上次浇水',p.last_water+'（'+p.days_since_water+'天前）']);
+  if(p.last_fertilize) kv.push(['上次施肥',p.last_fertilize+'（'+p.days_since_fertilize+'天前）']);
+  let html = '<div class="panel"><div class="plant-head"><div class="plant-avatar">🌿</div>'+
+    '<div><div class="plant-name">'+esc(p.name)+badge+'</div><div class="plant-sub">绿植养护记录</div></div></div>';
+  html += '<div class="kv">';
+  kv.forEach(([k,v])=>{ html+='<div class="item"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>'; });
+  html += '</div>';
+  if(p.notes) html+='<div class="kv" style="margin-top:10px"><div class="item" style="grid-column:1/-1"><div class="k">备注</div><div class="v" style="font-weight:400">'+esc(p.notes)+'</div></div></div>';
+  html += '</div>';
+
+  html += '<div class="panel" style="margin-top:16px"><h3>🪴 养护记录</h3>';
+  html += '<div class="care-form"><input type="date" id="cDate" value="'+todayStr()+'">'+
+    '<select id="cType"><option>浇水</option><option>施肥</option><option>换盆</option><option>修剪</option><option>其他</option></select>'+
+    '<input type="text" id="cNote" placeholder="备注，如：浇透" style="flex:1;min-width:180px">'+
+    '<button class="btn" id="cAdd">＋ 添加</button></div>';
+  html += '<div class="care-list" id="careList"></div></div>';
+  wrap.innerHTML = html;
+
+  const cl=$('careList');
+  if(!care.length){ cl.innerHTML='<div class="empty" style="padding:24px">还没有养护记录。</div>'; }
+  else{
+    care.forEach(c=>{
+      const el=document.createElement('div'); el.className='care-item';
+      el.innerHTML='<div class="date">'+c.date+'</div><span class="badge">'+esc(c.ctype)+'</span><div class="note"></div><button class="del">删除</button>';
+      el.querySelector('.note').textContent=c.note||'';
+      el.querySelector('.del').onclick=async()=>{ if(!confirm('删除该养护记录？')) return; try{ await api('/care/'+c.id,{method:'DELETE'}); await loadCare(); }catch(e){ showBanner('删除失败：'+e.message); } };
+      cl.appendChild(el);
+    });
+  }
+  $('cAdd').onclick=async()=>{
+    const payload={ date:$('cDate').value, ctype:$('cType').value, note:$('cNote').value.trim() };
+    if(!payload.date){ showBanner('请选择日期'); return; }
+    try{ await api('/plants/'+selectedId+'/care',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      $('cNote').value=''; await loadCare(); await loadPlants(); }catch(e){ showBanner('添加失败：'+e.message); }
+  };
+}
+
+$('plantSelect').onchange=()=>{ selectedId = $('plantSelect').value?parseInt($('plantSelect').value,10):null; loadCare(); };
+$('addPlantBtn').onclick=()=>openPlantModal(null);
+$('editPlantBtn').onclick=()=>{ const p=plants.find(x=>x.id===selectedId); if(p) openPlantModal(p); else showBanner('请先选择植物'); };
+$('delPlantBtn').onclick=async()=>{ const p=plants.find(x=>x.id===selectedId); if(!p) return; if(!confirm('删除植物「'+p.name+'」及其全部养护记录？')) return;
+  try{ await api('/plants/'+selectedId,{method:'DELETE'}); selectedId=null; await loadPlants(); await loadCare(); }catch(e){ showBanner('删除失败：'+e.message); } };
+
+function openPlantModal(p){
+  $('plantModalTitle').textContent = p?'编辑植物':'新增植物';
+  $('pName').value = p?(p.name||''):'';
+  $('pSpecies').value = p?(p.species||''):'';
+  $('pLocation').value = p?(p.location||''):'';
+  $('pAcquired').value = p?(p.acquired_date||''):'';
+  $('pWater').value = p?(p.water_interval||7):7;
+  $('pFert').value = p?(p.fertilize_interval||30):30;
+  $('pLastWater').value = p?(p.last_water||''):'';
+  $('pLastFert').value = p?(p.last_fertilize||''):'';
+  $('pNotes').value = p?(p.notes||''):'';
+  $('plantModal').classList.add('show');
+}
+$('pCancel').onclick=()=>$('plantModal').classList.remove('show');
+$('plantModal').addEventListener('click',(e)=>{ if(e.target===$('plantModal')) $('plantModal').classList.remove('show'); });
+$('pSave').onclick=async()=>{
+  const payload={ name:$('pName').value.trim(), species:$('pSpecies').value.trim(), location:$('pLocation').value.trim(),
+    acquired_date:$('pAcquired').value, water_interval:parseInt($('pWater').value||'0',10)||0, fertilize_interval:parseInt($('pFert').value||'0',10)||0,
+    last_water:$('pLastWater').value, last_fertilize:$('pLastFert').value, notes:$('pNotes').value.trim() };
+  if(!payload.name){ showBanner('名称必填'); return; }
+  const p=plants.find(x=>x.id===selectedId);
+  try{
+    if(p) await api('/plants/'+p.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/plants',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('plantModal').classList.remove('show'); await loadPlants(); await loadCare();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+loadPlants(); loadCare();
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家电 · 资产管理 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#1c7ed6; --accent2:#1971c2; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar select{padding:9px 12px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative;border-left:5px solid var(--accent)}
+.card:hover{box-shadow:0 6px 18px rgba(28,126,214,.12)}
+.card.soon{border-left-color:#f59f00}
+.card.expired{border-left-color:var(--danger)}
+.card .title{font-size:17px;font-weight:700;margin-bottom:6px}
+.card .badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;background:#e7f1fb;color:var(--accent);font-weight:600;margin-bottom:8px;margin-right:6px}
+.card .meta{font-size:13px;color:var(--muted);line-height:1.7}
+.card .warranty{margin-top:8px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px;display:inline-block}
+.warranty.ok{background:#e6fcf5;color:#087f5b}
+.warranty.soon{background:#fff3bf;color:#b8860b}
+.warranty.expired{background:#ffe3e3;color:#c92a2a}
+.warranty.none{background:#f1f3f5;color:#868e96}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(460px,92vw);max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:60px}
+.row2{display:flex;gap:10px}
+.row2 .field{flex:1;margin-bottom:12px}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🔧</div>
+  <h1>家电 · 资产管理</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <select id="filterCat"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 登记资产</button>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">登记资产</h3>
+    <div class="field"><label>名称</label><input type="text" id="mName" placeholder="如：小米电视 / 海尔冰箱"></div>
+    <div class="row2">
+      <div class="field"><label>分类</label>
+        <select id="mCat">
+          <option>大家电</option><option>数码</option><option>家具</option><option>厨卫</option><option>其他</option>
+        </select>
+      </div>
+      <div class="field"><label>摆放位置</label><input type="text" id="mLoc" placeholder="客厅 / 主卧"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>购买日期</label><input type="date" id="mBuy"></div>
+      <div class="field"><label>价格 (¥)</label><input type="number" id="mPrice" step="0.01" min="0"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>保修月数</label><input type="number" id="mWm" min="0" placeholder="如 12"></div>
+      <div class="field"><label>保修到期（留空则按购买日+月数算）</label><input type="date" id="mWe"></div>
+    </div>
+    <div class="field"><label>序列号 / 型号</label><input type="text" id="mSn" placeholder="SN 或型号"></div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="尺寸 / 配置等"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/apps/assets/api';
+const $=id=>document.getElementById(id);
+const banner=$('banner');
+function showBanner(m){banner.textContent=m;banner.style.display='block';}
+function hideBanner(){banner.style.display='none';}
+async function api(path,opts){const r=await fetch(API+path,opts);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+let assets=[], editingId=null;
+
+async function load(){
+  const cat=$('filterCat').value;
+  try{assets=await api('/assets'+(cat?'?category='+encodeURIComponent(cat):''));hideBanner();}
+  catch(e){assets=[];showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 assets-api 后端与 assets 数据库）。');}
+  render();
+}
+function warHtml(a){
+  if(a.warranty_status==='none') return '<span class="warranty none">未设置保修</span>';
+  if(a.warranty_status==='expired') return '<span class="warranty expired">保修已过期 '+Math.abs(a.warranty_days_left)+' 天</span>';
+  if(a.warranty_status==='soon') return '<span class="warranty soon">保修剩 '+a.warranty_days_left+' 天 ⏰</span>';
+  return '<span class="warranty ok">保修剩 '+a.warranty_days_left+' 天</span>';
+}
+function render(){
+  const box=$('list');box.innerHTML='';
+  if(!assets.length){box.innerHTML='<div class="empty">还没有登记的资产。<br>点击右上角「登记资产」，把家电、数码、家具的购买信息与保修录入，到期前自动高亮提醒。</div>';return;}
+  assets.forEach(a=>{
+    const el=document.createElement('div');el.className='card '+(a.warranty_status==='soon'?'soon':a.warranty_status==='expired'?'expired':'');
+    el.innerHTML='<div class="title"></div>'+
+      '<span class="badge"></span>'+(a.location?'<span class="badge" style="background:#f1f3f5;color:#495057">'+esc(a.location)+'</span>':'')+
+      '<div class="meta">💰 价格 ¥'+(a.price||0).toFixed(2)+'　📅 购于 '+(a.purchase_date||'—')+'</div>'+
+      (a.sn?'<div class="meta">🔖 '+esc(a.sn)+'</div>':'')+
+      (a.notes?'<div class="meta">📝 '+esc(a.notes)+'</div>':'')+
+      warHtml(a)+(a.warranty_expire?'<div class="meta">到期日 '+a.warranty_expire+'</div>':'');
+    el.querySelector('.title').textContent=a.name;
+    el.querySelector('.badge').textContent=a.category;
+    el.onclick=()=>openModal(a);
+    box.appendChild(el);
+  });
+}
+function openModal(a){
+  editingId=a?a.id:null;
+  $('modalTitle').textContent=a?'编辑资产':'登记资产';
+  $('mName').value=a?a.name:'';
+  $('mCat').value=a?(a.category||'其他'):'大家电';
+  $('mLoc').value=a?(a.location||''):'';
+  $('mBuy').value=a?a.purchase_date:'';
+  $('mPrice').value=a?(a.price||''):'';
+  $('mWm').value=a?(a.warranty_months||''):'';
+  $('mWe').value=a?a.warranty_expire:'';
+  $('mSn').value=a?(a.sn||''):'';
+  $('mNotes').value=a?(a.notes||''):'';
+  $('mDelete').style.display=a?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.remove('show');});
+$('mSave').onclick=async()=>{
+  const payload={name:$('mName').value.trim(),category:$('mCat').value,location:$('mLoc').value.trim(),
+    purchase_date:$('mBuy').value,price:parseFloat($('mPrice').value||0),
+    warranty_months:parseInt($('mWm').value||0),warranty_expire:$('mWe').value,
+    sn:$('mSn').value.trim(),notes:$('mNotes').value.trim()};
+  if(!payload.name){showBanner('名称必填');return;}
+  try{
+    if(editingId)await api('/assets/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/assets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show');await load();
+  }catch(e){showBanner('保存失败：'+e.message);}
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId)return;if(!confirm('删除该资产？'))return;
+  try{await api('/assets/'+editingId,{method:'DELETE'});$('modal').classList.remove('show');await load();}
+  catch(e){showBanner('删除失败：'+e.message);}
+};
+['大家电','数码','家具','厨卫','其他'].forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;$('filterCat').appendChild(o);});
+$('filterCat').onchange=load;
+load();
+</script>
+</body>
+</html>

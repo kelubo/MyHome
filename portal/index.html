@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyHome 家庭中心</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:16px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh; padding:40px 20px;
+}
+.wrap{max-width:960px;margin:0 auto}
+header{text-align:center;margin-bottom:24px}
+header h1{font-size:32px;letter-spacing:.5px}
+header p{color:var(--muted);margin-top:8px;font-size:15px}
+.topbar{display:flex;justify-content:center;margin-bottom:28px}
+.btn-manage{
+  background:var(--card);border:1px solid var(--line);color:var(--accent);
+  padding:9px 16px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.btn-manage:hover{border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px; box-shadow:0 1px 3px rgba(0,0,0,.04); transition:.2s;
+  display:flex; flex-direction:column;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 24px rgba(37,99,235,.12)}
+.card .ic{font-size:40px;margin-bottom:10px}
+.card h3{font-size:18px;margin-bottom:8px}
+.card p{color:var(--muted);font-size:14px;flex:1}
+.card a.btn{
+  margin-top:16px;display:inline-block;text-align:center;background:var(--accent);
+  color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:600;
+}
+.card a.btn:hover{background:var(--accent2)}
+.empty{text-align:center;color:var(--muted);padding:40px;grid-column:1/-1}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:36px;line-height:1.8}
+code{background:#eef2ff;padding:2px 6px;border-radius:6px;font-size:12px}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:8px 16px;font-size:13px;text-align:center;display:none;margin-bottom:16px}
+/* 管理弹窗 */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(520px,92vw);max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:6px}
+.modal-box .hint{color:var(--muted);font-size:13px;margin-bottom:14px}
+.switch-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.switch-row .ic{font-size:24px}
+.switch-row .info{flex:1}
+.switch-row .info .n{font-weight:600;font-size:15px}
+.switch-row .info .d{color:var(--muted);font-size:12px;margin-top:2px}
+.sw{position:relative;width:46px;height:26px;flex:0 0 auto}
+.sw input{opacity:0;width:0;height:0}
+.sw .slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:26px;transition:.2s}
+.sw .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked + .slider{background:var(--accent)}
+.sw input:checked + .slider:before{transform:translateX(20px)}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="banner" id="banner"></div>
+<div class="wrap">
+  <header>
+    <h1 id="title">MyHome 家庭中心</h1>
+    <p id="subtitle">加载中…</p>
+  </header>
+  <div class="topbar"><button class="btn-manage" id="manageBtn">⚙️ 管理应用</button></div>
+  <div class="grid" id="apps"><div class="empty">正在加载应用清单…</div></div>
+  <footer>
+    每个应用可独立运行，也可在此统一入口访问。<br>
+    集成模式：<code>docker-compose up -d</code> · 独立模式：仓库根目录运行 <code>python -m http.server</code> 后访问 <code>/portal/</code>
+  </footer>
+</div>
+
+<div class="modal" id="manageModal">
+  <div class="modal-box">
+    <h3>管理应用</h3>
+    <div class="hint">关闭某个应用后，它在门户首页不再显示（数据不受影响，重新开启即可）。开关状态在所有设备同步。</div>
+    <div id="switchList"></div>
+    <div class="acts">
+      <button class="btn-manage" id="manageClose" style="border-color:var(--line);color:var(--text)">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/portal-api';
+const $ = (id)=>document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; setTimeout(()=>banner.style.display='none',4000); }
+
+let apps = [];
+let meta = {title:'MyHome 家庭中心', subtitle:''};
+
+// 优先从 portal-api 读取（支持开关同步），失败时回退静态 apps.json
+async function loadApps(){
+  try{
+    const r = await fetch(API+'/apps');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    apps = await r.json();
+    hideSourceNote();
+    return;
+  }catch(e){ /* 回退静态 */ }
+  try{
+    const r2 = await fetch('../apps.json');
+    const data = await r2.json();
+    meta = data.portal || meta;
+    apps = (data.apps||[]).map(a=>{ a.enabled = (a.enabled!==false); return a; });
+    showBanner('⚠️ 开关服务未连接，已用本地清单（开关暂不生效）。');
+  }catch(e2){
+    $('apps').innerHTML='<div class="empty">加载应用清单失败，请通过 HTTP 服务访问（而非 file:// 打开）。</div>';
+  }
+}
+function hideSourceNote(){}
+
+function render(){
+  $('title').textContent = meta.title || 'MyHome 家庭中心';
+  $('subtitle').textContent = meta.subtitle || '';
+  const box = $('apps'); box.innerHTML='';
+  const visible = apps.filter(a=>a.enabled!==false);
+  if(!visible.length){
+    box.innerHTML='<div class="empty">当前没有已开启的应用。<br>点击右上角「管理应用」开启它们。</div>';
+    return;
+  }
+  visible.forEach(a=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML='<div class="ic">'+(a.icon||'📦')+'</div><h3></h3><p></p><a class="btn" href="'+a.path+'">打开应用 →</a>';
+    el.querySelector('h3').textContent=a.name;
+    el.querySelector('p').textContent=a.description||'';
+    box.appendChild(el);
+  });
+}
+
+function renderSwitches(){
+  const box=$('switchList'); box.innerHTML='';
+  apps.forEach(a=>{
+    const row=document.createElement('div'); row.className='switch-row';
+    row.innerHTML='<div class="ic">'+(a.icon||'📦')+'</div>'+
+      '<div class="info"><div class="n"></div><div class="d"></div></div>'+
+      '<label class="sw"><input type="checkbox"'+(a.enabled!==false?' checked':'')+'><span class="slider"></span></label>';
+    row.querySelector('.n').textContent=a.name;
+    row.querySelector('.d').textContent=a.description||'';
+    const cb=row.querySelector('input');
+    cb.onchange=()=>toggleApp(a, cb.checked, row);
+    box.appendChild(row);
+  });
+}
+
+async function toggleApp(a, val, row){
+  // 乐观更新
+  a.enabled = val;
+  try{
+    const r=await fetch(API+'/apps/'+a.id+'/enabled',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:val})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    render();
+  }catch(e){
+    a.enabled = !val;       // 回滚
+    row.querySelector('input').checked = a.enabled;
+    render();
+    showBanner('开关保存失败：'+e.message+'（请确认 portal-api 已启动）');
+  }
+}
+
+$('manageBtn').onclick=()=>{ renderSwitches(); $('manageModal').classList.add('show'); };
+$('manageClose').onclick=()=>$('manageModal').classList.remove('show');
+$('manageModal').addEventListener('click',(e)=>{ if(e.target===$('manageModal')) $('manageModal').classList.remove('show'); });
+
+(async()=>{ await loadApps(); render(); })();
+</script>
+</body>
+</html>

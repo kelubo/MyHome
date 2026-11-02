@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭公告板 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;gap:10px;padding:16px 22px;flex-wrap:wrap;align-items:flex-end}
+.toolbar .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
+.toolbar label{font-size:12px;color:var(--muted)}
+.toolbar input,.toolbar select,.toolbar textarea{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.toolbar input:focus,.toolbar select:focus,.toolbar textarea:focus{border-color:var(--accent)}
+.toolbar textarea{min-height:60px;resize:vertical}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-items:start}
+.post{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:var(--radius);padding:15px;position:relative}
+.post .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.post .title{font-size:16px;font-weight:700;flex:1}
+.post .tag{font-size:11px;padding:3px 9px;border-radius:20px;background:#eef2ff;color:var(--accent);font-weight:600}
+.post .pin{font-size:12px;color:var(--amber,#b45309);font-weight:700}
+.post .content{font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.post .foot{margin-top:10px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.post .acts{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.post .acts button{font-size:12px;padding:3px 8px;border-radius:7px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--muted)}
+.post .acts button:hover{border-color:var(--accent);color:var(--accent)}
+.post .acts .del:hover{border-color:var(--danger);color:var(--danger)}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">📌</div>
+  <h1>家庭公告板</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <div class="field"><label>标题（可选）</label><input type="text" id="pTitle" placeholder="如：周末大扫除"></div>
+  <div class="field"><label>发布人</label><input type="text" id="pAuthor" placeholder="如：妈妈"></div>
+  <div class="field"><label>标签</label>
+    <select id="pTag"><option>公告</option><option>通知</option><option>分工</option><option>留言</option><option>提醒</option></select>
+  </div>
+  <div class="field" style="flex:2;min-width:220px"><label>内容</label><textarea id="pContent" placeholder="写点什么…"></textarea></div>
+  <div class="field" style="flex:0"><label>&nbsp;</label><button class="btn" id="addBtn">📌 发布</button></div>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<script>
+const API = '/apps/board/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+function esc(s){ return String(s==null?'':s); }
+function fmt(s){ if(!s) return ''; return s.replace('T',' ').slice(0,16); }
+const TAG_COLORS = {'公告':'#2563eb','通知':'#0891b2','分工':'#7c3aed','留言':'#db2777','提醒':'#d97706'};
+
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let posts=[];
+
+async function load(){
+  try{
+    posts = await api('/posts');
+    hideBanner();
+  }catch(e){
+    posts=[]; showBanner('⚠️ 无法连接后端 API（需 docker 集成模式，含 board-api 与 board 数据库）。');
+  }
+  render();
+}
+
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!posts.length){ box.innerHTML='<div class="empty">公告板空空如也。<br>在上方填写内容，点击「📌 发布」。</div>'; return; }
+  posts.forEach(p=>{
+    const color = TAG_COLORS[p.tag] || '#2563eb';
+    const el=document.createElement('div'); el.className='post';
+    el.style.borderLeftColor = color;
+    el.innerHTML =
+      '<div class="top"><div class="title"></div>'+(p.pinned?'<span class="pin">📌置顶</span>':'')+'<span class="tag"></span></div>'+
+      '<div class="content"></div>'+
+      '<div class="foot"><span>👤 '+(p.author||'匿名')+'</span><span>🕒 '+fmt(p.created_at)+'</span></div>'+
+      '<div class="acts"><button data-pin="'+p.id+'">'+(p.pinned?'取消置顶':'置顶')+'</button><button data-del="'+p.id+'" class="del">🗑</button></div>';
+    el.querySelector('.title').textContent=p.title||'(无标题)';
+    el.querySelector('.tag').textContent=p.tag||'公告';
+    el.querySelector('.tag').style.color=color;
+    el.querySelector('.content').textContent=p.content||'';
+    el.querySelector('[data-pin]').onclick=()=>togglePin(p);
+    el.querySelector('[data-del]').onclick=()=>del(p.id);
+    box.appendChild(el);
+  });
+}
+
+function togglePin(p){
+  api('/posts/'+p.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:!p.pinned})})
+    .then(load).catch(e=>showBanner('操作失败：'+e.message));
+}
+function del(id){
+  if(!confirm('删除这条公告？')) return;
+  api('/posts/'+id,{method:'DELETE'}).then(load).catch(e=>showBanner('删除失败：'+e.message));
+}
+
+$('addBtn').onclick=async()=>{
+  const content=$('pContent').value.trim(); if(!content){ showBanner('内容必填'); return; }
+  const payload={ title:$('pTitle').value.trim(), author:$('pAuthor').value.trim(), tag:$('pTag').value, content };
+  try{
+    await api('/posts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('pTitle').value=''; $('pAuthor').value=''; $('pContent').value='';
+    await load();
+  }catch(e){ showBanner('发布失败：'+e.message); }
+};
+
+load();
+</script>
+</body>
+</html>

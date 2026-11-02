@@ -1,0 +1,22 @@
+{
+  "stations": [
+    { "name": "中国之声（蜻蜓）", "url": "https://lhttp.qtfm.cn/live/15318317/64k.mp3", "genre": "新闻 / 资讯" },
+    { "name": "怀集音乐之声", "url": "https://lhttp.qingting.fm/live/4804/64k.mp3", "genre": "音乐" },
+    { "name": "清晨音乐台", "url": "http://lhttp.qingting.fm/live/4915/64k.mp3", "genre": "音乐" },
+    { "name": "500首华语经典", "url": "https://lhttp.qtfm.cn/live/5022308/64k.mp3", "genre": "华语经典" },
+    { "name": "两广之声音乐台", "url": "https://lhttp.qtfm.cn/live/20500149/64k.mp3", "genre": "音乐" },
+    { "name": "国际新闻（蜻蜓）", "url": "https://lhttp.qtfm.cn/live/20500172/64k.mp3", "genre": "新闻 / 资讯" },
+    { "name": "雨声轻音乐", "url": "https://stream.zeno.fm/689zc32y4x8uv", "genre": "轻音乐" },
+    { "name": "德云社相声合集", "url": "https://stream.zeno.fm/yqawwmweq8mtv", "genre": "相声 / 曲艺" },
+    { "name": "AsiaFM 高清音乐台", "url": "http://asiafm.hk:8000/asiahd", "genre": "音乐 (AAC+)" },
+    { "name": "古典音乐台 FM97.7（台湾）", "url": "http://59.120.88.155:8000/live.mp3", "genre": "古典" },
+
+    { "name": "中国之声（央广官方）", "url": "https://ngcdn001.cnr.cn/live/zgzs/index.m3u8", "genre": "新闻 / 资讯 (HLS)" },
+    { "name": "经济之声（央广官方）", "url": "https://ngcdn002.cnr.cn/live/jjzs/index.m3u8", "genre": "财经 (HLS)" },
+    { "name": "音乐之声（央广官方）", "url": "https://ngcdn003.cnr.cn/live/yyzs/index.m3u8", "genre": "音乐 (HLS)" },
+    { "name": "都市之声（央广官方）", "url": "https://ngcdn004.cnr.cn/live/dszs/index.m3u8", "genre": "音乐 (HLS)" },
+    { "name": "大湾区之声（央广官方）", "url": "https://ngcdn007.cnr.cn/live/hxzs/index.m3u8", "genre": "资讯 (HLS)" },
+    { "name": "CRI 中文环球（国际台）", "url": "http://sk.cri.cn/hyhq.m3u8", "genre": "国际 / 华语 (HLS)" },
+    { "name": "CRI 环球资讯（国际台）", "url": "http://sk.cri.cn/905.m3u8", "genre": "资讯 (HLS)" }
+  ]
+}

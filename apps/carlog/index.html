@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车辆保养记录 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+form.add{margin:0 22px 18px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+form.add .field{display:flex;flex-direction:column;gap:5px}
+form.add label{font-size:12px;color:var(--muted)}
+form.add input,form.add textarea{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+form.add input:focus,form.add textarea:focus{border-color:var(--accent)}
+form.add .full{grid-column:1/-1}
+form.add .acts{grid-column:1/-1;display:flex;gap:8px}
+.wrap{padding:0 22px 30px;display:flex;flex-direction:column;gap:12px}
+.rec{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.rec .main{flex:1;min-width:200px}
+.rec .item{font-size:16px;font-weight:700}
+.rec .meta{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.7}
+.rec .meta b{color:var(--text);font-weight:600}
+.next{font-size:12px;padding:4px 10px;border-radius:8px;background:#ecfdf5;color:#047857;font-weight:600}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(420px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.modal-box .field{margin-bottom:12px}
+.modal-box label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.modal-box input,.modal-box textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.modal-box .acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🚗</div>
+  <h1>车辆保养记录</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <select id="vehicleSel"><option value="">选择车辆…</option></select>
+  <button class="btn ghost" id="addVehicleBtn">＋ 新增车辆</button>
+  <div class="spacer"></div>
+</div>
+
+<form class="add" id="addForm">
+  <div class="field"><label>日期</label><input type="date" id="rDate"></div>
+  <div class="field"><label>里程(km)</label><input type="number" id="rMileage" placeholder="如 52000" min="0"></div>
+  <div class="field"><label>保养项目</label><input type="text" id="rItem" placeholder="如 机油机滤"></div>
+  <div class="field"><label>费用(元)</label><input type="number" id="rCost" placeholder="0" min="0" step="0.01"></div>
+  <div class="field"><label>下次里程(km)</label><input type="number" id="rNextM" placeholder="可选" min="0"></div>
+  <div class="field"><label>下次日期</label><input type="date" id="rNextD"></div>
+  <div class="field full"><label>备注</label><input type="text" id="rNote" placeholder="如 4S店 / 自购材料"></div>
+  <div class="acts">
+    <button type="submit" class="btn">＋ 添加记录</button>
+  </div>
+</form>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="vehModal">
+  <div class="modal-box">
+    <h3>新增车辆</h3>
+    <div class="field"><label>名称 / 车牌</label><input type="text" id="vName" placeholder="如 沪A·12345 / 家用车"></div>
+    <div class="field"><label>备注（车型、年份等）</label><textarea id="vNote" placeholder="可选"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="vSave">💾 保存</button>
+      <button class="btn ghost" id="vCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/carlog/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function esc(s){ return String(s==null?'':s); }
+function money(n){ n=Number(n)||0; return n?('¥'+n.toFixed(2)):'—'; }
+
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let vehicles=[], records=[], currentVehicle=null;
+
+async function loadVehicles(){
+  try{
+    vehicles = await api('/vehicles');
+    hideBanner();
+  }catch(e){ vehicles=[]; showBanner('⚠️ 无法连接后端 API（需 docker 集成模式，含 carlog-api 与 carlog 数据库）。'); }
+  const sel=$('vehicleSel'); const prev=sel.value;
+  sel.innerHTML='<option value="">选择车辆…</option>';
+  vehicles.forEach(v=>{ const o=document.createElement('option'); o.value=v.id; o.textContent=v.name; sel.appendChild(o); });
+  if(currentVehicle) sel.value=currentVehicle;
+  else if(prev && vehicles.find(v=>String(v.id)===prev)) sel.value=prev;
+}
+
+async function loadRecords(){
+  if(!currentVehicle){ records=[]; render(); return; }
+  try{ records = await api('/records?vehicle_id='+currentVehicle); }
+  catch(e){ records=[]; }
+  render();
+}
+
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!currentVehicle){ box.innerHTML='<div class="empty">请先选择或新增一辆车，再记录保养。</div>'; return; }
+  if(!records.length){ box.innerHTML='<div class="empty">这辆车还没有保养记录。<br>在上方表单添加第一条（日期、项目必填）。</div>'; return; }
+  records.forEach(r=>{
+    const el=document.createElement('div'); el.className='rec';
+    let next='';
+    if(r.next_mileage||r.next_date) next='<span class="next">下次：'+(r.next_mileage?r.next_mileage+'km ':'')+(r.next_date||'')+'</span>';
+    el.innerHTML =
+      '<div class="main">'+
+        '<div class="item"></div>'+
+        '<div class="meta">📅 <b>'+esc(r.date)+'</b> · 里程 <b>'+(r.mileage||0)+' km</b> · 费用 <b>'+money(r.cost)+'</b>'+
+        (r.note?'<br>📝 '+esc(r.note):'')+'</div>'+
+      '</div>'+ next +
+      '<button class="btn danger" data-del="'+r.id+'">🗑</button>';
+    el.querySelector('.item').textContent=r.item||'(未命名项目)';
+    el.querySelector('[data-del]').onclick=()=>delRecord(r.id);
+    box.appendChild(el);
+  });
+}
+
+function delRecord(id){
+  if(!confirm('删除这条保养记录？')) return;
+  api('/records/'+id,{method:'DELETE'}).then(()=>loadRecords()).catch(e=>showBanner('删除失败：'+e.message));
+}
+
+$('vehicleSel').onchange=()=>{ currentVehicle=$('vehicleSel').value||null; loadRecords(); };
+$('addVehicleBtn').onclick=()=>{ $('vName').value=''; $('vNote').value=''; $('vehModal').classList.add('show'); };
+$('vCancel').onclick=()=>$('vehModal').classList.remove('show');
+$('vehModal').addEventListener('click',(e)=>{ if(e.target===$('vehModal')) $('vehModal').classList.remove('show'); });
+$('vSave').onclick=async()=>{
+  const name=$('vName').value.trim(); if(!name){ showBanner('车辆名称必填'); return; }
+  try{
+    const v=await api('/vehicles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, note:$('vNote').value.trim()})});
+    $('vehModal').classList.remove('show');
+    await loadVehicles();
+    currentVehicle=String(v.id); $('vehicleSel').value=currentVehicle; await loadRecords();
+  }catch(e){ showBanner('保存车辆失败：'+e.message); }
+};
+
+$('addForm').onsubmit=async(e)=>{
+  e.preventDefault();
+  if(!currentVehicle){ showBanner('请先选择或新增一辆车'); return; }
+  const item=$('rItem').value.trim(); const date=$('rDate').value;
+  if(!item||!date){ showBanner('保养项目与日期必填'); return; }
+  const payload={
+    vehicle_id:Number(currentVehicle), date, item,
+    mileage:Number($('rMileage').value||0), cost:Number($('rCost').value||0),
+    next_mileage:Number($('rNextM').value||0), next_date:$('rNextD').value||null,
+    note:$('rNote').value.trim()
+  };
+  try{
+    await api('/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    e.target.reset(); $('rDate').value=todayStr();
+    await loadRecords();
+  }catch(err){ showBanner('添加失败：'+err.message); }
+};
+
+$('rDate').value=todayStr();
+loadVehicles().then(loadRecords);
+</script>
+</body>
+</html>

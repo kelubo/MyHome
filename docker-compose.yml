@@ -1,0 +1,500 @@
+services:
+  # ── 门户 + 反向代理（统一入口） ───────────────────────────────
+  # ── 家庭环境记录 后端 API ───────────────────────────────
+  homeenv-api:
+    build: ./apps/homeenv/server
+    container_name: myhome-homeenv-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/homeenv
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 房屋维修记录后端 API ───────────────────────────────
+  repair-api:
+    build: ./apps/repair/server
+    container_name: myhome-repair-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/repair
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 孩子成长日志后端 API ───────────────────────────────
+  # ── 孩子成长日志 后端 API ───────────────────────────────
+  growth-api:
+    build: ./apps/growth/server
+    container_name: myhome-growth-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/growth
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+
+  # ── 家庭能耗记录 后端 API ───────────────────────────────
+  energy-api:
+    build: ./apps/energy/server
+    container_name: myhome-energy-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/energy
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭保险保单 后端 API ───────────────────────────────
+  insurance-api:
+    build: ./apps/insurance/server
+    container_name: myhome-insurance-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/insurance
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭证件档案 后端 API ───────────────────────────────
+  certs-api:
+    build: ./apps/certs/server
+    container_name: myhome-certs-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/certs
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  portal:
+    image: nginx:alpine
+    container_name: myhome-portal
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    depends_on:
+      - music-api
+      - wiki-api
+      - album-api
+      - calendar-api
+      - carlog-api
+      - pantry-api
+      - board-api
+      - docs-api
+      - subs-api
+      - tasks-api
+      - health-api
+      - recipes-api
+      - menu-api
+      - ledger-api
+      - assets-api
+      - medkit-api
+      - films-api
+      - travel-api
+      - plants-api
+      - books-api
+      - pets-api
+      - vault-api
+      - homeenv-api
+      - repair-api
+      - growth-api
+      - energy-api
+      - insurance-api
+      - certs-api
+      - portal-api
+    networks:
+      - home
+
+  portal-api:/n    build: ./portal-api
+    container_name: myhome-portal-api
+    environment:/n      APP_JSON: /data/apps.json
+    volumes:/n      - ./apps.json:/data/apps.json:rw
+    expose:/n      - "5000"
+    restart: unless-stopped
+    networks:/n      - home
+
+  # ── 音乐播放器后端 API ───────────────────────────────────────
+  music-api:
+    build: ./apps/music/server
+    container_name: myhome-music-api
+    environment:
+      # 连【共享】PostgreSQL 实例，使用专属 database: music
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/music
+      # 音乐库：key:标签:容器内路径（多个用逗号分隔）。
+      # 本地目录默认映射到 ./data/music（把歌曲放这里即可）。
+      # NAS 音乐源在 Web 页面「管理 NAS」里动态挂载，无需在此配置。
+      MUSIC_LIBRARIES: local:本地音乐:/music/local
+    expose:
+      - "5000"
+    volumes:
+      # 本地音乐：映射到 ./data/music（把歌曲放这里即可）
+      - ./data/music:/music/local
+    # NAS 在容器内运行时挂载，需要 SYS_ADMIN 能力 + 关闭 apparmor 限制（仅本机家庭服务器，可接受）
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    # 服务器端出声：把宿主声卡透传进容器（服务器需接功放/音箱）。
+    # ⚠️ 若宿主机【没有】音频设备（如纯开发机），请删除下面这两行，否则容器无法启动；
+    #    删除后仅「服务器音箱」播放不可用，其余功能（电台/音乐库浏览/收藏）不受影响。
+    devices:
+      - "/dev/snd"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家用手册 Wiki 后端 API ───────────────────────────────
+  wiki-api:
+    build: ./apps/wiki/server
+    container_name: myhome-wiki-api
+    environment:
+      # 连【共享】PostgreSQL 实例，使用专属 database: wiki
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/wiki
+    expose:
+      - "5000"
+    volumes:
+      - ./data/wiki:/data/wiki
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭相册后端 API ───────────────────────────────────────
+  album-api:
+    build: ./apps/album/server
+    container_name: myhome-album-api
+    environment:
+      # 连【共享】PostgreSQL 实例，使用专属 database: album
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/album
+    expose:
+      - "5000"
+    volumes:
+      - ./data/album:/data/album
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 纪念日 / 家庭日历后端 API ──────────────────────────
+  calendar-api:
+    build: ./apps/calendar/server
+    container_name: myhome-calendar-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/calendar
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 车辆保养记录后端 API ───────────────────────────────
+  carlog-api:
+    build: ./apps/carlog/server
+    container_name: myhome-carlog-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/carlog
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 购物清单 / 冰箱库存后端 API ────────────────────────
+  pantry-api:
+    build: ./apps/pantry/server
+    container_name: myhome-pantry-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/pantry
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭公告板后端 API ────────────────────────────────
+  board-api:
+    build: ./apps/board/server
+    container_name: myhome-board-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/board
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭文档归档后端 API ───────────────────────────────
+  docs-api:
+    build: ./apps/docs/server
+    container_name: myhome-docs-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/docs
+    expose:
+      - "5000"
+    volumes:
+      - ./data/docs:/data/docs
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 订阅 / 会员续费管理后端 API ───────────────────────
+  subs-api:
+    build: ./apps/subs/server
+    container_name: myhome-subs-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/subs
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭任务看板后端 API ─────────────────────────────
+  tasks-api:
+    build: ./apps/tasks/server
+    container_name: myhome-tasks-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/tasks
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 健康档案后端 API ─────────────────────────────────
+  health-api:
+    build: ./apps/health/server
+    container_name: myhome-health-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/health
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 菜谱大全后端 API ───────────────────────────────
+  recipes-api:
+    build: ./apps/recipes/server
+    container_name: myhome-recipes-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/recipes
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 每周菜单后端 API ───────────────────────────────
+  menu-api:
+    build: ./apps/menu/server
+    container_name: myhome-menu-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/menu
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭账本后端 API ───────────────────────────────
+  ledger-api:
+    build: ./apps/ledger/server
+    container_name: myhome-ledger-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/ledger
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家电 / 资产管理后端 API ────────────────────────
+  assets-api:
+    build: ./apps/assets/server
+    container_name: myhome-assets-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/assets
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 藏书馆后端 API ─────────────────────────────────
+  books-api:
+    build: ./apps/books/server
+    container_name: myhome-books-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/books
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  pets-api:
+    build: ./apps/pets/server
+    container_name: myhome-pets-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/pets
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭密码箱后端 API ─────────────────────────────
+  vault-api:
+    build: ./apps/vault/server
+    container_name: myhome-vault-api
+    environment:
+      # 敏感字段以 Fernet 加密存储；密钥取自 VAULT_KEY 或落盘 ./data/vault/vault.key
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/vault
+      VAULT_DIR: /data/vault
+    expose:
+      - "5000"
+    volumes:
+      - ./data/vault:/data/vault
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 共享数据库：所有需要持久化的应用都连这一个 PostgreSQL 实例 ──
+  # 每个应用使用独立的 database（见 postgres-init/01-create-dbs.sql）。
+  # 数据统一落在宿主机 ./data/postgres（bind 挂载），便于整体备份。
+  medkit-api:
+    build: ./apps/medkit/server
+    container_name: myhome-medkit-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/medkit
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+
+  films-api:
+    build: ./apps/films/server
+    container_name: myhome-films-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/films
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+
+  travel-api:
+    build: ./apps/travel/server
+    container_name: myhome-travel-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/travel
+      GEO_DIR: /data/geo
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:/n      - ./data/travel-geo:/data/geo
+    networks:
+      - home
+
+
+  plants-api:
+    build: ./apps/plants/server
+    container_name: myhome-plants-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/plants
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: myhome-postgres
+    environment:
+      POSTGRES_USER: myhome
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}   # ⚠️ 请务必改成你自己的强密码
+      # 首次初始化（./data/postgres 为空时）会自动执行 postgres-init/*.sql 建库
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    # 如需在本机用 psql / pgAdmin 直连，取消下面注释（默认关闭以避免 5432 端口冲突）
+    # ports:
+    #   - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - home
+
+networks:
+  home:
+    driver: bridge

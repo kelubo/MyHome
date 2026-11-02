@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅游地图 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#0ea5e9; --accent2:#0284c7; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.tabs{display:flex;gap:6px;padding:12px 22px 0;background:var(--card);border-bottom:1px solid var(--line)}
+.tabs .tab{padding:10px 18px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:10px 10px 0 0}
+.tabs .tab.active{color:var(--accent);background:var(--bg);border-color:var(--line)}
+.tabview{display:none}
+.tabview.active{display:block}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar select{padding:9px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;background:#fafbff;outline:none;min-width:180px}
+.toolbar .spacer{flex:1}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:1fr;gap:16px;max-width:880px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.panel h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.trip-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.trip-icon{font-size:42px}
+.trip-name{font-size:22px;font-weight:800}
+.trip-sub{color:var(--muted);font-size:13px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:8px}
+.kv .item{background:#fafbff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.kv .k{font-size:11px;color:var(--muted)}
+.kv .v{font-size:14px;font-weight:600}
+.log-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.log-form input,.log-form textarea{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.log-form textarea{flex:1;min-width:200px;resize:vertical;min-height:38px}
+.log-list{display:flex;flex-direction:column;gap:10px}
+.log-item{background:#fafbff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;position:relative}
+.log-item .day{font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:4px}
+.log-item .lt{font-size:15px;font-weight:700;margin-bottom:4px}
+.log-item .lc{font-size:13px;line-height:1.6;white-space:pre-wrap}
+.log-item .del{position:absolute;top:10px;right:12px;color:var(--danger);cursor:pointer;border:none;background:transparent;font-size:13px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:40px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+/* 地图页 */
+.map-toolbar{display:flex;align-items:center;gap:10px;padding:14px 22px;flex-wrap:wrap}
+.map-toolbar .spacer{flex:1}
+#mapChart{width:100%;height:520px;background:#fff;border:1px solid var(--line);border-radius:var(--radius)}
+.map-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;padding:0 22px 30px;max-width:1280px}
+@media(max-width:980px){ .map-layout{grid-template-columns:1fr} #mapChart{height:380px} }
+.side{display:flex;flex-direction:column;gap:14px}
+.vis-form{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.vis-form .row{margin-bottom:10px}
+.vis-list{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;max-height:430px;overflow:auto}
+.vis-item{border-left:4px solid var(--accent);background:#fafbff;border-radius:0 10px 10px 0;padding:10px 12px;margin-bottom:10px;position:relative}
+.vis-item .loc{font-weight:700;font-size:14px}
+.vis-item .meta{font-size:12px;color:var(--muted);margin-top:3px}
+.vis-item .del{position:absolute;top:8px;right:10px;color:var(--danger);cursor:pointer;border:none;background:transparent;font-size:13px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">✈️</div>
+  <h1>旅游地图</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="trips" id="tabTrips">📓 行程游记</div>
+  <div class="tab" data-tab="map" id="tabMap">🗺️ 足迹地图</div>
+</div>
+
+<!-- 视图一：行程游记 -->
+<div class="tabview active" id="view-trips">
+<div class="toolbar">
+  <select id="tripSelect"><option value="">— 选择旅行 —</option></select>
+  <button class="btn ghost" id="editTripBtn">✎ 编辑</button>
+  <button class="btn danger" id="delTripBtn">🗑 删除</button>
+  <div class="spacer"></div>
+  <button class="btn" id="addTripBtn">＋ 新增旅行</button>
+</div>
+<div class="wrap" id="wrap"></div>
+</div>
+
+<div class="modal" id="tripModal">
+  <div class="modal-box">
+    <h3 id="tripModalTitle">新增旅行</h3>
+    <div class="field"><label>旅行名称 *</label><input type="text" id="tName" placeholder="如：春节海南行"></div>
+    <div class="field"><label>目的地</label><input type="text" id="tDest" placeholder="如：海南 · 三亚"></div>
+    <div class="row">
+      <div class="field"><label>出发日期</label><input type="date" id="tStart"></div>
+      <div class="field"><label>返程日期</label><input type="date" id="tEnd"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>预算</label><input type="number" id="tBudget" step="0.01" placeholder="如 12000"></div>
+      <div class="field"><label>货币</label><input type="text" id="tCurrency" value="¥"></div>
+    </div>
+    <div class="field"><label>备注</label><textarea id="tNotes" placeholder="总体安排、注意事项"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="tSave">💾 保存</button>
+      <button class="btn ghost" id="tCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 视图二：足迹地图 -->
+<div class="tabview" id="view-map">
+  <div class="map-toolbar">
+    <button class="btn ghost" id="visExport">⬇️ 导出备份</button>
+    <label class="btn ghost" style="cursor:pointer">⬆️ 导入备份<input type="file" id="visImport" accept="application/json" style="display:none"></label>
+    <button class="btn ghost" id="mapBack" style="display:none">← 返回上级</button>
+    <div class="spacer"></div>
+    <span class="meta" style="color:var(--muted);font-size:13px">已标记 <b id="visCount">0</b> 个地点（点击地图可下钻到市 / 区县）</span>
+  </div>
+  <div class="map-layout">
+    <div id="mapChart"></div>
+    <div class="side">
+      <div class="vis-form">
+        <h3 style="font-size:15px;margin-bottom:10px">＋ 添加足迹</h3>
+        <div class="row">
+          <div class="field"><label>省份 *</label><select id="vProvince"></select></div>
+          <div class="field"><label>城市</label><select id="vCity"></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>区县</label><select id="vDistrict"></select></div>
+          <div class="field"><label>乡镇</label><select id="vTown"></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>到达时间</label><input type="date" id="vArrival"></div>
+          <div class="field"><label>标记颜色</label><input type="color" id="vColor" value="#0ea5e9" style="height:42px"></div>
+        </div>
+        <div class="field"><label>备注</label><input type="text" id="vNote" placeholder="如：春节全家游"></div>
+        <button class="btn" id="vAdd" style="width:100%">保存足迹</button>
+      </div>
+      <div class="vis-list" id="visList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/apps/travel/china-regions.js"></script>
+<script src="/apps/travel/city-coords.js"></script>
+<script src="/apps/travel/echarts.min.js"></script>
+<script>
+const API = '/apps/travel/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function esc(s){ const d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
+
+/* ───────── 标签切换 ───────── */
+let mapReady=false;
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tabview').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    $('view-'+t.dataset.tab).classList.add('active');
+    if(t.dataset.tab==='map' && !mapReady){ initMapView(); }
+  };
+});
+
+/* ───────── 行程游记逻辑 ───────── */
+let trips = [];
+let selectedId = null;
+let logs = [];
+
+async function loadTrips(){
+  try{
+    trips = await api('/trips'); hideBanner();
+    const sel=$('tripSelect'); sel.innerHTML='<option value="">— 选择旅行 —</option>';
+    trips.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.name+(t.destination?('（'+t.destination+'）'):''); sel.appendChild(o); });
+    if(trips.length && selectedId===null) selectedId=trips[0].id;
+    if(!trips.find(t=>t.id===selectedId)) selectedId = trips.length?trips[0].id:null;
+    sel.value = selectedId||'';
+  }catch(e){
+    trips=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 travel-api 后端与 travel 数据库）。');
+  }
+  render();
+}
+async function loadLogs(){
+  if(!selectedId){ logs=[]; render(); return; }
+  try{ logs = await api('/trips/'+selectedId+'/logs'); }catch(e){ logs=[]; }
+  render();
+}
+function render(){
+  const wrap=$('wrap'); wrap.innerHTML='';
+  if(!trips.length){
+    wrap.innerHTML='<div class="empty">还没有登记旅行。<br>点击右上角「＋ 新增旅行」，记录目的地、行程与预算，再添加每日游记。</div>';
+    return;
+  }
+  const trip = trips.find(t=>t.id===selectedId);
+  if(!trip) return;
+  const kv=[];
+  if(trip.destination) kv.push(['目的地',trip.destination]);
+  if(trip.start_date) kv.push(['出发',trip.start_date]);
+  if(trip.end_date) kv.push(['返程',trip.end_date]);
+  if(trip.budget) kv.push(['预算',(trip.currency||'¥')+Number(trip.budget).toLocaleString()]);
+  let html = '<div class="panel"><div class="trip-head"><div class="trip-icon">✈️</div>'+
+    '<div><div class="trip-name">'+esc(trip.name)+'</div><div class="trip-sub">旅行计划与游记</div></div></div>';
+  html += '<div class="kv">';
+  kv.forEach(([k,v])=>{ html+='<div class="item"><div class="k">'+k+'</div><div class="v">'+esc(v)+'</div></div>'; });
+  html += '</div>';
+  if(trip.notes) html+='<div class="kv" style="margin-top:10px"><div class="item" style="grid-column:1/-1"><div class="k">备注</div><div class="v" style="font-weight:400">'+esc(trip.notes)+'</div></div></div>';
+  html += '</div>';
+
+  html += '<div class="panel" style="margin-top:16px"><h3>📝 行程 / 游记</h3>';
+  html += '<div class="log-form"><input type="date" id="lDay" value="'+todayStr()+'">'+
+    '<input type="text" id="lTitle" placeholder="标题，如：抵达三亚" style="min-width:160px">'+
+    '<textarea id="lContent" placeholder="当天见闻、花费、贴士…"></textarea>'+
+    '<button class="btn" id="lAdd">＋ 添加</button></div>';
+  html += '<div class="log-list" id="logList"></div></div>';
+  wrap.innerHTML = html;
+
+  const ll=$('logList');
+  if(!logs.length){ ll.innerHTML='<div class="empty" style="padding:24px">还没有行程 / 游记记录。</div>'; }
+  else{
+    logs.forEach(l=>{
+      const el=document.createElement('div'); el.className='log-item';
+      el.innerHTML='<div class="day"></div><div class="lt"></div><div class="lc"></div><button class="del">删除</button>';
+      el.querySelector('.day').textContent=l.day?('📅 '+l.day):'未填日期';
+      el.querySelector('.lt').textContent=l.title||'（无标题）';
+      el.querySelector('.lc').textContent=l.content||'';
+      el.querySelector('.del').onclick=async()=>{ if(!confirm('删除该记录？')) return; try{ await api('/logs/'+l.id,{method:'DELETE'}); await loadLogs(); }catch(e){ showBanner('删除失败：'+e.message); } };
+      ll.appendChild(el);
+    });
+  }
+  $('lAdd').onclick=async()=>{
+    const payload={ day:$('lDay').value, title:$('lTitle').value.trim(), content:$('lContent').value.trim() };
+    try{ await api('/trips/'+selectedId+'/logs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      $('lTitle').value=''; $('lContent').value=''; await loadLogs(); }catch(e){ showBanner('添加失败：'+e.message); }
+  };
+}
+
+$('tripSelect').onchange=()=>{ selectedId = $('tripSelect').value?parseInt($('tripSelect').value,10):null; loadLogs(); };
+$('addTripBtn').onclick=()=>openTripModal(null);
+$('editTripBtn').onclick=()=>{ const t=trips.find(x=>x.id===selectedId); if(t) openTripModal(t); else showBanner('请先选择旅行'); };
+$('delTripBtn').onclick=async()=>{ const t=trips.find(x=>x.id===selectedId); if(!t) return; if(!confirm('删除旅行「'+t.name+'」及其全部游记？')) return;
+  try{ await api('/trips/'+selectedId,{method:'DELETE'}); selectedId=null; await loadTrips(); await loadLogs(); }catch(e){ showBanner('删除失败：'+e.message); } };
+
+function openTripModal(t){
+  $('tripModalTitle').textContent = t?'编辑旅行':'新增旅行';
+  $('tName').value = t?(t.name||''):'';
+  $('tDest').value = t?(t.destination||''):'';
+  $('tStart').value = t?(t.start_date||''):'';
+  $('tEnd').value = t?(t.end_date||''):'';
+  $('tBudget').value = t?(t.budget||''):'';
+  $('tCurrency').value = t?(t.currency||'¥'):'¥';
+  $('tNotes').value = t?(t.notes||''):'';
+  $('tripModal').classList.add('show');
+}
+$('tCancel').onclick=()=>$('tripModal').classList.remove('show');
+$('tripModal').addEventListener('click',(e)=>{ if(e.target===$('tripModal')) $('tripModal').classList.remove('show'); });
+$('tSave').onclick=async()=>{
+  const payload={ name:$('tName').value.trim(), destination:$('tDest').value.trim(),
+    start_date:$('tStart').value, end_date:$('tEnd').value,
+    budget:parseFloat($('tBudget').value||'0')||0, currency:$('tCurrency').value.trim()||'¥', notes:$('tNotes').value.trim() };
+  if(!payload.name){ showBanner('旅行名称必填'); return; }
+  const t=trips.find(x=>x.id===selectedId);
+  try{
+    if(t) await api('/trips/'+t.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/trips',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('tripModal').classList.remove('show'); await loadTrips(); await loadLogs();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+
+/* ───────── 足迹地图逻辑 ───────── */
+let visits = [];
+let myChart = null;
+let geoStack = [{adcode:'100000', mapName:'china', level:'country'}];  // 下钻栈：栈顶为当前层级
+let featureMeta = {};        // 当前地图各行政区：name → {adcode, level, childrenNum, center}
+let currentCenterByName = {}; // 当前地图各行政区中心坐标：name → [lng, lat]
+let geoCache = {};           // mapName → 已加载的 GeoJSON（返回上级时免重复拉取）
+
+function initMapView(){
+  if(typeof echarts === 'undefined'){
+    showBanner('⚠️ 地图组件未加载（echarts.min.js 缺失），足迹地图不可用；行程游记不受影响。');
+    return;
+  }
+  mapReady=true;
+  buildVisitUI();
+  loadGeo('100000')
+    .then(()=>{ if(myChart) myChart.on('click', onMapClick); loadVisits(); })
+    .catch(()=>showBanner('⚠️ 中国地图数据加载失败（china-geo.json 缺失）。'));
+  window.addEventListener('resize', ()=>{ if(myChart) myChart.resize(); });
+}
+
+// 当前层级下，按哪个字段做「区域着色」：全国→省、省级地图→市、市级地图→区县
+function levelKey(level){
+  if(level==='country')  return 'province';
+  if(level==='province') return 'city';
+  if(level==='city')     return 'district';
+  return null;
+}
+
+// 加载某级行政区划地图（adcode=100000 用本地 china-geo.json，其余走后端 /geo 代理并缓存）
+async function loadGeo(adcode){
+  let json;
+  if(adcode==='100000'){
+    const r = await fetch('/apps/travel/china-geo.json');
+    json = await r.json();
+  }else{
+    const r = await fetch(API+'/geo/'+adcode);
+    json = await r.json();
+  }
+  const level = (adcode==='100000') ? 'country'
+    : ((json.features && json.features[0] && json.features[0].properties && json.features[0].properties.level) || 'province');
+  applyGeo(json, adcode, level);
+}
+
+// 注册地图、构建行政区元数据与中心坐标、入栈并刷新
+function applyGeo(json, adcode, level){
+  const mapName = (adcode==='100000') ? 'china' : String(adcode);
+  echarts.registerMap(mapName, json);
+  const meta={}, centers={};
+  (json.features||[]).forEach(f=>{
+    const p=f.properties||{}; const nm=p.name;
+    if(nm){
+      meta[nm]={adcode:p.adcode, level:p.level, childrenNum:p.childrenNum||0, center:p.center};
+      if(Array.isArray(p.center) && p.center.length>=2) centers[nm]=[p.center[0], p.center[1]];
+    }
+  });
+  // 全国级额外并入城市坐标，让地级以上市散点落在市本级而非省会
+  if(level==='country' && typeof cityCoordinates!=='undefined'){
+    for(const prov in cityCoordinates){ const o=cityCoordinates[prov]; for(const city in o){ centers[city]=o[city]; } }
+  }
+  featureMeta=meta; currentCenterByName=centers; geoCache[mapName]=json;
+  const top=geoStack[geoStack.length-1];
+  if(top.mapName!==mapName){ geoStack.push({adcode:String(adcode), mapName, level}); }
+  $('mapBack').style.display = geoStack.length>1 ? 'inline-block' : 'none';
+  renderMap();
+}
+
+// 点击地图区域 → 若有下级行政区则下钻
+function onMapClick(params){
+  if(params.componentType!=='series') return;
+  const meta = featureMeta[params.name];
+  if(meta && meta.childrenNum>0 && meta.adcode){
+    loadGeo(String(meta.adcode));
+  }
+}
+
+function buildVisitUI(){
+  // 省份下拉
+  const ps=$('vProvince'); ps.innerHTML='<option value="">— 选择省份 —</option>';
+  if(typeof chinaRegions!=='undefined'){
+    Object.keys(chinaRegions).sort().forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; ps.appendChild(o); });
+  }
+  ps.onchange=onProvinceChange;
+  $('vCity').onchange=onCityChange;
+  $('vDistrict').onchange=onDistrictChange;
+  $('vArrival').value=todayStr();
+  $('vAdd').onclick=addVisit;
+  $('visExport').onclick=exportVisits;
+  $('visImport').onchange=importVisits;
+  $('mapBack').onclick=()=>{
+    if(geoStack.length>1){
+      geoStack.pop();
+      const t=geoStack[geoStack.length-1];
+      applyGeo(geoCache[t.mapName], t.adcode, t.level);
+    }
+  };
+}
+
+function onProvinceChange(){
+  const p=$('vProvince').value, c=$('vCity'), d=$('vDistrict'), t=$('vTown');
+  c.innerHTML='<option value="">— 城市 —</option>'; d.innerHTML='<option value="">— 区县 —</option>'; t.innerHTML='<option value="">— 乡镇 —</option>';
+  if(p && typeof chinaRegions!=='undefined' && chinaRegions[p]){
+    Object.keys(chinaRegions[p]).sort().forEach(city=>{ const o=document.createElement('option'); o.value=city; o.textContent=city; c.appendChild(o); });
+  }
+}
+function onCityChange(){
+  const p=$('vProvince').value, c=$('vCity').value, d=$('vDistrict'), t=$('vTown');
+  d.innerHTML='<option value="">— 区县 —</option>'; t.innerHTML='<option value="">— 乡镇 —</option>';
+  if(p && c && typeof chinaRegions!=='undefined' && chinaRegions[p][c]){
+    Object.keys(chinaRegions[p][c]).sort().forEach(dis=>{ const o=document.createElement('option'); o.value=dis; o.textContent=dis; d.appendChild(o); });
+  }
+}
+function onDistrictChange(){
+  const p=$('vProvince').value, c=$('vCity').value, d=$('vDistrict').value, t=$('vTown');
+  t.innerHTML='<option value="">— 乡镇 —</option>';
+  if(p && c && d && typeof chinaRegions!=='undefined' && chinaRegions[p][c][d]){
+    chinaRegions[p][c][d].forEach(tw=>{ const o=document.createElement('option'); o.value=tw; o.textContent=tw; t.appendChild(o); });
+  }
+}
+
+function getCoord(v){
+  // 优先用最细已知行政区的中心坐标：区县 → 市 → 省（下钻越深越精确）
+  const keys=[v.district, v.city, v.province].filter(Boolean);
+  for(const k of keys){
+    if(currentCenterByName[k]){
+      const c=currentCenterByName[k]; const off=0.12;
+      return [c[0]+(Math.random()-0.5)*off, c[1]+(Math.random()-0.5)*off];
+    }
+  }
+  return null;
+}
+
+async function loadVisits(){
+  try{ visits = await api('/visits'); }catch(e){ visits=[]; }
+  renderVisits(); renderMap();
+}
+function fmtArrival(s){ return s?('📅 '+s):'未填日期'; }
+
+function addVisit(){
+  const payload={
+    province:$('vProvince').value.trim(), city:$('vCity').value.trim(),
+    district:$('vDistrict').value.trim(), town:$('vTown').value.trim(),
+    arrival:$('vArrival').value, color:$('vColor').value, note:$('vNote').value.trim()
+  };
+  if(!payload.province){ showBanner('请至少选择省份'); return; }
+  api('/visits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(()=>{ $('vNote').value=''; loadVisits(); })
+    .catch(e=>showBanner('添加失败：'+e.message));
+}
+function deleteVisit(id){
+  if(!confirm('删除该足迹？')) return;
+  api('/visits/'+id,{method:'DELETE'}).then(loadVisits).catch(e=>showBanner('删除失败：'+e.message));
+}
+
+function renderVisits(){
+  $('visCount').textContent=visits.length;
+  const box=$('visList');
+  if(!visits.length){ box.innerHTML='<div class="empty" style="padding:20px">还没有足迹。从左侧地图或表单添加你去过的地方。</div>'; return; }
+  box.innerHTML='';
+  visits.forEach(v=>{
+    const loc=[v.province,v.city,v.district,v.town].filter(Boolean).join(' ');
+    const el=document.createElement('div'); el.className='vis-item'; el.style.borderLeftColor=v.color||'#0ea5e9';
+    el.innerHTML='<div class="loc"></div><div class="meta"></div><button class="del">删除</button>';
+    el.querySelector('.loc').textContent=loc||'(未命名)';
+    el.querySelector('.meta').textContent=fmtArrival(v.arrival)+(v.note?(' · '+v.note):'');
+    el.querySelector('.del').onclick=()=>deleteVisit(v.id);
+    box.appendChild(el);
+  });
+}
+
+function renderMap(){
+  if(!myChart) myChart=echarts.init($('mapChart'));
+  const top=geoStack[geoStack.length-1];
+  const lvl=top.level;
+  const key=levelKey(lvl);   // 当前层级用于「区域着色」的字段
+  const agg={};
+  if(key){
+    visits.forEach(v=>{
+      const k=v[key]; if(!k) return;
+      if(!agg[k]) agg[k]={count:0,color:v.color||'#0ea5e9',visits:[]};
+      agg[k].count++; agg[k].visits.push(v);
+    });
+  }
+  const mapData=Object.keys(agg).map(n=>({name:n,value:agg[n].count,itemStyle:{areaColor:agg[n].color}}));
+  const scatterData=[];
+  visits.forEach(v=>{
+    const c=getCoord(v);
+    if(c) scatterData.push({
+      name:[v.province,v.city,v.district,v.town].filter(Boolean).join(' '),
+      value:c.concat([1]),
+      itemStyle:{color:v.color||'#0ea5e9'}, visitInfo:v
+    });
+  });
+  myChart.setOption({
+    tooltip:{ trigger:'item', formatter:function(params){
+      if(params.componentSubType==='map' && agg[params.name]){
+        const d=agg[params.name]; let h='<strong>'+params.name+'</strong><br/>足迹 '+d.count+' 处<br/><br/>';
+        d.visits.forEach((v,i)=>{ const loc=[v.province,v.city,v.district,v.town].filter(Boolean).join(' '); h+=(i+1)+'. '+loc+' '+(v.arrival||'')+'<br/>'; });
+        return h;
+      }
+      if(params.componentSubType==='scatter' && params.data.visitInfo){
+        const v=params.data.visitInfo; return '<strong>'+params.data.name+'</strong><br/>到达：'+(v.arrival||'')+(v.note?('<br/>'+v.note):'');
+      }
+      return params.name;
+    }},
+    geo:{ map:top.mapName, roam:true, itemStyle:{areaColor:'#f0f0f0',borderColor:'#9aa0a6',borderWidth:1},
+      emphasis:{itemStyle:{areaColor:'#ffe08a'}} },
+    series:[
+      { name:'区域足迹', type:'map', map:top.mapName, geoIndex:0,
+        itemStyle:{areaColor:'#f0f0f0',borderColor:'#9aa0a6',borderWidth:1},
+        emphasis:{label:{show:true},itemStyle:{areaColor:'#ffe08a'}}, data:mapData },
+      { name:'具体位置', type:'scatter', coordinateSystem:'geo', symbol:'pin', symbolSize:30,
+        label:{show:false}, emphasis:{label:{show:true,formatter:'{b}',position:'top'}}, data:scatterData }
+    ]
+  }, true);
+}
+
+function exportVisits(){
+  if(!visits.length){ showBanner('没有足迹可导出'); return; }
+  const blob=new Blob([JSON.stringify(visits,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='足迹备份_'+todayStr()+'.json'; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function importVisits(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const arr=JSON.parse(reader.result);
+      if(!Array.isArray(arr)) throw new Error('格式错误');
+      api('/visits/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(arr)})
+        .then(r=>{ showBanner('已导入 '+r.added+' 条足迹'); loadVisits(); })
+        .catch(err=>showBanner('导入失败：'+err.message));
+    }catch(err){ showBanner('导入失败：文件格式错误'); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+/* 启动 */
+loadTrips(); loadLogs();
+</script>
+</body>
+</html>

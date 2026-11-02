@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭文档归档 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(37,99,235,.12)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.card .title{font-size:17px;font-weight:700;flex:1}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#eef2ff;color:var(--accent);font-weight:600}
+.card .desc{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-bottom:6px}
+.card .meta{font-size:12px;color:var(--muted)}
+.card .fc{display:inline-block;margin-left:6px;color:var(--accent);font-weight:600}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+/* 模态框 */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(520px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+/* 文件区 */
+.doc-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.doc-head .t{font-size:17px;font-weight:700;flex:1}
+.file-row{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.file-row img{width:46px;height:46px;object-fit:cover;border-radius:7px;border:1px solid var(--line)}
+.file-row .info{flex:1;min-width:0}
+.file-row .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-row .sz{font-size:12px;color:var(--muted)}
+.file-row a.link{font-size:13px;color:var(--accent);text-decoration:none;margin-right:8px}
+.file-upload{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">📁</div>
+  <h1>家庭文档归档</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <select id="filterCat"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新建文档</button>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<!-- 新建/编辑文档 -->
+<div class="modal" id="docModal">
+  <div class="modal-box">
+    <h3 id="docModalTitle">新建文档</h3>
+    <div class="field"><label>标题</label><input type="text" id="dTitle" placeholder="如：房产证 / 宽带合同"></div>
+    <div class="field"><label>分类</label>
+      <select id="dCat">
+        <option>合同</option><option>证件</option><option>保修卡</option>
+        <option>说明书</option><option>财务</option><option>其他</option>
+      </select>
+    </div>
+    <div class="field"><label>日期（签署/到期/办理）</label><input type="date" id="dDate"></div>
+    <div class="field"><label>说明</label><textarea id="dDesc" placeholder="简要说明，如办理地点、注意事项"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="dSave">💾 保存</button>
+      <button class="btn ghost" id="dCancel">取消</button>
+      <button class="btn danger" id="dDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 文档文件管理 -->
+<div class="modal" id="filesModal">
+  <div class="modal-box">
+    <div class="doc-head">
+      <div class="t" id="fmTitle"></div>
+      <button class="btn ghost" id="fmClose">关闭</button>
+    </div>
+    <div id="fileList"></div>
+    <div class="file-upload">
+      <div class="field"><label>上传文件（PDF / 图片 / 扫描件，单文件 ≤50MB，可多选）</label>
+        <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.bmp,.svg,.tif,.tiff,.txt,.md,.csv,.doc,.docx,.xls,.xlsx,.zip"></div>
+      <button class="btn" id="uploadBtn">⬆ 上传文件</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/docs/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function fmtSize(b){ if(!b) return ''; if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+let docs = [];
+let editingId = null;
+let currentDoc = null;
+
+async function load(){
+  const cat = $('filterCat').value;
+  try{
+    docs = await api('/documents'+(cat?'?category='+encodeURIComponent(cat):''));
+    hideBanner();
+  }catch(e){
+    docs=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 docs-api 后端与 docs 数据库）。');
+  }
+  render();
+}
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!docs.length){ box.innerHTML='<div class="empty">还没有文档。<br>点击右上角「＋ 新建文档」，把合同、证件、保修卡、说明书扫描件归档在这里。</div>'; return; }
+  docs.forEach(d=>{
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge"></span></div>'+
+      (d.description?'<div class="desc"></div>':'')+
+      '<div class="meta">📆 '+(d.doc_date||'无日期')+'<span class="fc">📎 '+d.file_count+' 个文件</span></div>';
+    el.querySelector('.title').textContent=d.title;
+    el.querySelector('.badge').textContent=d.category;
+    if(d.description) el.querySelector('.desc').textContent=d.description;
+    el.onclick=()=>openFiles(d);
+    box.appendChild(el);
+  });
+}
+
+function openDocModal(d){
+  editingId = d ? d.id : null;
+  $('docModalTitle').textContent = d ? '编辑文档' : '新建文档';
+  $('dTitle').value = d?d.title:'';
+  $('dCat').value = d?(d.category||'其他'):'合同';
+  $('dDate').value = d?d.doc_date:'';
+  $('dDesc').value = d?(d.description||''):'';
+  $('dDelete').style.display = d?'inline-block':'none';
+  $('docModal').classList.add('show');
+}
+$('addBtn').onclick=()=>openDocModal(null);
+$('dCancel').onclick=()=>$('docModal').classList.remove('show');
+$('docModal').addEventListener('click',(e)=>{ if(e.target===$('docModal')) $('docModal').classList.remove('show'); });
+$('dSave').onclick=async()=>{
+  const payload={ title:$('dTitle').value.trim(), category:$('dCat').value, doc_date:$('dDate').value, description:$('dDesc').value.trim() };
+  if(!payload.title){ showBanner('标题必填'); return; }
+  try{
+    if(editingId) await api('/documents/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/documents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('docModal').classList.remove('show'); await load();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('dDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该文档及其所有文件？')) return;
+  try{ await api('/documents/'+editingId,{method:'DELETE'}); $('docModal').classList.remove('show'); await load(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+
+async function openFiles(d){
+  currentDoc = d;
+  $('fmTitle').textContent = d.title + '（'+d.category+'）';
+  $('filesModal').classList.add('show');
+  await renderFiles();
+}
+async function renderFiles(){
+  if(!currentDoc) return;
+  try{
+    const files = await api('/documents/'+currentDoc.id+'/files');
+    const box=$('fileList'); box.innerHTML='';
+    if(!files.length){ box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">暂无文件，点击下方上传。</div>'; return; }
+    files.forEach(f=>{
+      const isImg = (f.mime||'').startsWith('image/');
+      const url = API+'/files/'+f.id+'/file';
+      const row=document.createElement('div'); row.className='file-row';
+      row.innerHTML =
+        (isImg?'<img src="'+url+'" alt="">':'<div style="width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:22px">📄</div>')+
+        '<div class="info"><div class="nm"></div><div class="sz">'+fmtSize(f.size)+'</div></div>'+
+        '<a class="link" href="'+url+'" target="_blank">打开</a>'+
+        '<button class="btn danger" data-del="'+f.id+'">🗑</button>';
+      row.querySelector('.nm').textContent=f.name;
+      row.querySelector('[data-del]').onclick=async()=>{
+        if(!confirm('删除该文件？')) return;
+        try{ await api('/files/'+f.id,{method:'DELETE'}); await renderFiles(); await load(); }
+        catch(e){ showBanner('删除失败：'+e.message); }
+      };
+      box.appendChild(row);
+    });
+  }catch(e){ showBanner('读取文件失败：'+e.message); }
+}
+$('fmClose').onclick=()=>$('filesModal').classList.remove('show');
+$('filesModal').addEventListener('click',(e)=>{ if(e.target===$('filesModal')) $('filesModal').classList.remove('show'); });
+$('uploadBtn').onclick=async()=>{
+  const inp=$('fileInput');
+  if(!inp.files.length){ showBanner('请先选择文件'); return; }
+  if(!currentDoc){ showBanner('请先保存文档'); return; }
+  const fd=new FormData();
+  for(const f of inp.files) fd.append('file', f);
+  try{
+    await fetch(API+'/documents/'+currentDoc.id+'/files',{method:'POST',body:fd});
+    inp.value=''; await renderFiles(); await load();
+  }catch(e){ showBanner('上传失败：'+e.message); }
+};
+
+$('filterCat').onchange=load;
+['合同','证件','保修卡','说明书','财务','其他'].forEach(c=>{
+  const o=document.createElement('option'); o.value=c; o.textContent=c; $('filterCat').appendChild(o);
+});
+load();
+</script>
+</body>
+</html>

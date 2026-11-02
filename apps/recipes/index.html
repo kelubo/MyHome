@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>菜谱大全 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#e8590c; --accent2:#d9480f; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar input,.toolbar select{padding:9px 12px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(232,89,12,.12)}
+.card .title{font-size:17px;font-weight:700;margin-bottom:6px}
+.card .badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;background:#fff0e6;color:var(--accent);font-weight:600;margin-bottom:8px}
+.card .meta{font-size:12px;color:var(--muted)}
+.card .desc{font-size:13px;color:var(--text);line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(520px,94vw);max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.6}
+.row{display:flex;gap:10px}
+.row .field{flex:1;margin-bottom:12px}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.detail .ttl{font-size:22px;font-weight:800;margin-bottom:4px}
+.detail .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+.detail h4{font-size:14px;margin:14px 0 6px;color:var(--accent)}
+.detail ul,.detail ol{margin:0 0 0 20px;line-height:1.9;font-size:14px}
+.detail .notes{background:#fff7ed;border-radius:10px;padding:10px 12px;font-size:13px;color:#7c2d12;margin-top:10px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🍳</div>
+  <h1>菜谱大全</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="🔍 搜菜名 / 食材 / 简介">
+  <select id="filterCat"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新增菜谱</button>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新增菜谱</h3>
+    <div class="field"><label>菜名</label><input type="text" id="mName" placeholder="如：番茄炒蛋"></div>
+    <div class="row">
+      <div class="field"><label>分类</label>
+        <select id="mCat">
+          <option>早餐</option><option>午餐</option><option>晚餐</option>
+          <option>汤羹</option><option>甜点</option><option>其他</option>
+        </select>
+      </div>
+      <div class="row" style="display:flex;gap:10px;flex:1">
+        <div class="field"><label>份数</label><input type="number" id="mServ" min="0"></div>
+        <div class="field"><label>耗时(分钟)</label><input type="number" id="mTime" min="0"></div>
+      </div>
+    </div>
+    <div class="field"><label>简介</label><textarea id="mDesc" placeholder="一句话描述"></textarea></div>
+    <div class="field"><label>食材（每行一条，如「鸡蛋 3 个」）</label><textarea id="mIng" placeholder="鸡蛋 3 个&#10;番茄 2 个"></textarea></div>
+    <div class="field"><label>步骤（每行一步）</label><textarea id="mSteps" placeholder="鸡蛋打散&#10;番茄切块"></textarea></div>
+    <div class="field"><label>小贴士</label><textarea id="mNotes" placeholder="火大快炒更嫩"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="modal" id="detail">
+  <div class="modal-box detail">
+    <h3 id="dTitle">菜谱详情</h3>
+    <div id="dBody"></div>
+    <div class="acts"><button class="btn ghost" id="dClose">关闭</button></div>
+  </div>
+</div>
+
+<script>
+const API='/apps/recipes/api';
+const $=id=>document.getElementById(id);
+const banner=$('banner');
+function showBanner(m){banner.textContent=m;banner.style.display='block';}
+function hideBanner(){banner.style.display='none';}
+async function api(path,opts){const r=await fetch(API+path,opts);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+let recipes=[], editingId=null;
+
+async function load(){
+  const cat=$('filterCat').value, q=$('search').value.trim();
+  try{
+    let path='/recipes'+(cat?'?category='+encodeURIComponent(cat):'')+(q?'&q='+encodeURIComponent(q):'');
+    if(!cat&&q) path='/recipes?q='+encodeURIComponent(q);
+    recipes=await api(path);
+    hideBanner();
+  }catch(e){recipes=[];showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 recipes-api 后端与 recipes 数据库）。');}
+  render();
+}
+function render(){
+  const box=$('list');box.innerHTML='';
+  if(!recipes.length){box.innerHTML='<div class="empty">还没有菜谱。<br>点击右上角「＋ 新增菜谱」，把家常菜、汤羹、甜点都收进来；做每周菜单时可直接从这里挑。</div>';return;}
+  recipes.forEach(r=>{
+    const el=document.createElement('div');el.className='card';
+    el.innerHTML='<div class="badge"></div><div class="title"></div>'+
+      (r.description?'<div class="desc"></div>':'')+
+      '<div class="meta">⏱ '+(r.time_min||0)+' 分钟 · 🍽 '+(r.servings||0)+' 份</div>';
+    el.querySelector('.badge').textContent=r.category;
+    el.querySelector('.title').textContent=r.name;
+    if(r.description)el.querySelector('.desc').textContent=r.description;
+    el.onclick=()=>openDetail(r);
+    box.appendChild(el);
+  });
+}
+function openDetail(r){
+  let html='<div class="ttl"></div><div class="sub"></div>';
+  html+='<h4>🥕 食材</h4><ul>'+r.ingredients.split('\n').filter(Boolean).map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';
+  html+='<h4>👩‍🍳 步骤</h4><ol>'+r.steps.split('\n').filter(Boolean).map(l=>'<li>'+esc(l)+'</li>').join('')+'</ol>';
+  if(r.notes)html+='<div class="notes">💡 '+esc(r.notes)+'</div>';
+  $('dTitle').textContent=r.name;
+  $('dBody').innerHTML=html;
+  $('detail').classList.add('show');
+}
+function openModal(r){
+  editingId=r?r.id:null;
+  $('modalTitle').textContent=r?'编辑菜谱':'新增菜谱';
+  $('mName').value=r?r.name:'';
+  $('mCat').value=r?(r.category||'其他'):'晚餐';
+  $('mServ').value=r?(r.servings||''):'';
+  $('mTime').value=r?(r.time_min||''):'';
+  $('mDesc').value=r?(r.description||''):'';
+  $('mIng').value=r?(r.ingredients||''):'';
+  $('mSteps').value=r?(r.steps||''):'';
+  $('mNotes').value=r?(r.notes||''):'';
+  $('mDelete').style.display=r?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.remove('show');});
+$('dClose').onclick=()=>$('detail').classList.remove('show');
+$('detail').addEventListener('click',e=>{if(e.target===$('detail'))$('detail').classList.remove('show');});
+$('mSave').onclick=async()=>{
+  const payload={name:$('mName').value.trim(),category:$('mCat').value,
+    servings:parseInt($('mServ').value||0),time_min:parseInt($('mTime').value||0),
+    description:$('mDesc').value.trim(),ingredients:$('mIng').value.trim(),
+    steps:$('mSteps').value.trim(),notes:$('mNotes').value.trim()};
+  if(!payload.name){showBanner('菜名必填');return;}
+  try{
+    if(editingId)await api('/recipes/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/recipes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show');await load();await loadCats();
+  }catch(e){showBanner('保存失败：'+e.message);}
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId)return;
+  if(!confirm('删除该菜谱？'))return;
+  try{await api('/recipes/'+editingId,{method:'DELETE'});$('modal').classList.remove('show');await load();await loadCats();}
+  catch(e){showBanner('删除失败：'+e.message);}
+};
+async function loadCats(){
+  try{const cs=await api('/categories');const sel=$('filterCat');
+    cs.forEach(c=>{if(c.category){const o=document.createElement('option');o.value=c.category;o.textContent=c.category;sel.appendChild(o);}});}
+  catch(e){}
+}
+$('search').addEventListener('input',()=>{clearTimeout(window._t);window._t=setTimeout(load,300);});
+$('filterCat').onchange=load;
+load();loadCats();
+</script>
+</body>
+</html>

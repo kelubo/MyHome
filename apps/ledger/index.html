@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭账本 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#7048e8; --accent2:#5f3dc4; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+  --inc:#0ca678; --exp:#e8590c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.summary{display:flex;gap:14px;padding:16px 22px;flex-wrap:wrap}
+.sum-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 18px;min-width:150px}
+.sum-card .k{font-size:12px;color:var(--muted)}
+.sum-card .v{font-size:22px;font-weight:800;margin-top:2px}
+.v.inc{color:var(--inc)} .v.exp{color:var(--exp)} .v.bal{color:var(--accent)}
+.toolbar{display:flex;align-items:center;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:9px 12px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.list{padding:0 22px 30px}
+.row{display:grid;grid-template-columns:90px 70px 90px 1fr 110px 40px;gap:10px;align-items:center;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:14px}
+.row.head{background:transparent;border:none;color:var(--muted);font-size:12px;font-weight:600;padding-bottom:0}
+.row .amt{text-align:right;font-weight:700}
+.row .amt.inc{color:var(--inc)} .row .amt.exp{color:var(--exp)}
+.row .del{color:var(--danger);cursor:pointer;text-align:center;opacity:.6}
+.row .del:hover{opacity:1}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted)}
+.cat-bar{display:flex;gap:10px;padding:0 22px 16px;flex-wrap:wrap}
+.cat-chip{font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 14px}
+.cat-chip b{color:var(--accent)}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(460px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row2{display:flex;gap:10px}
+.row2 .field{flex:1;margin-bottom:12px}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+@media(max-width:640px){.row{grid-template-columns:70px 56px 1fr 90px 30px}.row .acct{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">💰</div>
+  <h1>家庭账本</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="summary" id="summary"></div>
+
+<div class="toolbar">
+  <input type="month" id="month" title="选择月份">
+  <select id="filterType">
+    <option value="">全部类型</option><option>收入</option><option>支出</option>
+  </select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 记一笔</button>
+</div>
+
+<div class="cat-bar" id="catBar"></div>
+
+<div class="list" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">记一笔</h3>
+    <div class="row2">
+      <div class="field"><label>日期</label><input type="date" id="mDate"></div>
+      <div class="field"><label>类型</label>
+        <select id="mType"><option>支出</option><option>收入</option></select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>分类</label>
+        <select id="mCat">
+          <option>餐饮</option><option>居家</option><option>教育</option><option>交通</option>
+          <option>医疗</option><option>娱乐</option><option>工资</option><option>理财</option><option>其他</option>
+        </select>
+      </div>
+      <div class="field"><label>金额 (¥)</label><input type="number" id="mAmount" step="0.01" min="0"></div>
+    </div>
+    <div class="field"><label>账户</label><input type="text" id="mAccount" placeholder="现金 / 银行卡 / 微信 / 支付宝"></div>
+    <div class="field"><label>备注</label><textarea id="mNote" placeholder="如：超市采购"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/apps/ledger/api';
+const $=id=>document.getElementById(id);
+const banner=$('banner');
+function showBanner(m){banner.textContent=m;banner.style.display='block';}
+function hideBanner(){banner.style.display='none';}
+async function api(path,opts){const r=await fetch(API+path,opts);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function thisMonth(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+let txns=[], editingId=null;
+
+async function load(){
+  const month=$('month').value||thisMonth(), typ=$('filterType').value;
+  let path='/txns?month='+month+(typ?'&type='+encodeURIComponent(typ):'');
+  try{txns=await api(path);hideBanner();}catch(e){txns=[];showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 ledger-api 后端与 ledger 数据库）。');}
+  render();
+}
+async function loadSummary(){
+  const month=$('month').value||thisMonth();
+  try{const s=await api('/summary?month='+month);
+    $('summary').innerHTML=
+      '<div class="sum-card"><div class="k">收入</div><div class="v inc">¥'+s.income.toFixed(2)+'</div></div>'+
+      '<div class="sum-card"><div class="k">支出</div><div class="v exp">¥'+s.expense.toFixed(2)+'</div></div>'+
+      '<div class="sum-card"><div class="k">结余</div><div class="v bal">¥'+s.balance.toFixed(2)+'</div></div>';
+    $('catBar').innerHTML=s.by_category.sort((a,b)=>b.expense-a.expense)
+      .map(c=>'<span class="cat-chip">'+esc(c.category)+'：<b>¥'+c.expense.toFixed(0)+'</b></span>').join('');
+  }catch(e){}
+}
+function render(){
+  const box=$('list');box.innerHTML='';
+  if(!txns.length){box.innerHTML='<div class="empty">本月还没有记账。<br>点击右上角「＋ 记一笔」，记录家庭每一笔收支；顶部自动统计收入/支出/结余与分类占比。</div>';return;}
+  let html='<div class="row head"><span>日期</span><span>类型</span><span>分类</span><span>备注 / 账户</span><span class="amt">金额</span><span></span></div>';
+  txns.forEach(t=>{
+    const isInc=(t.type||'支出')==='收入';
+    html+='<div class="row" data-id="'+t.id+'">'+
+      '<span>'+t.date.slice(5)+'</span>'+
+      '<span>'+(isInc?'收入':'支出')+'</span>'+
+      '<span>'+esc(t.category)+'</span>'+
+      '<span>'+(t.note?esc(t.note):'')+(t.account?' <span style="color:var(--muted);font-size:12px">· '+esc(t.account)+'</span>':'')+'</span>'+
+      '<span class="amt '+(isInc?'inc':'exp')+'">'+(isInc?'+':'-')+ (t.amount||0).toFixed(2)+'</span>'+
+      '<span class="del" data-id="'+t.id+'">✕</span></div>';
+  });
+  box.innerHTML=html;
+  box.querySelectorAll('.row[data-id]').forEach(r=>r.onclick=e=>{
+    if(e.target.classList.contains('del')){delTxn(+e.target.dataset.id);return;}
+    const t=txns.find(x=>x.id===+r.dataset.id);openModal(t);
+  });
+}
+function openModal(t){
+  editingId=t?t.id:null;
+  $('modalTitle').textContent=t?'编辑账目':'记一笔';
+  $('mDate').value=t?t.date:todayStr();
+  $('mType').value=t?(t.type||'支出'):'支出';
+  $('mCat').value=t?(t.category||'其他'):'餐饮';
+  $('mAmount').value=t?(t.amount||''):'';
+  $('mAccount').value=t?(t.account||''):'';
+  $('mNote').value=t?(t.note||''):'';
+  $('mDelete').style.display=t?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.remove('show');});
+$('mSave').onclick=async()=>{
+  const payload={date:$('mDate').value,type:$('mType').value,category:$('mCat').value,
+    amount:parseFloat($('mAmount').value||0),account:$('mAccount').value.trim(),note:$('mNote').value.trim()};
+  if(!payload.date){showBanner('日期必填');return;}
+  if(payload.amount<=0){showBanner('金额需大于 0');return;}
+  try{
+    if(editingId)await api('/txns/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/txns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show');await load();await loadSummary();
+  }catch(e){showBanner('保存失败：'+e.message);}
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId)return;if(!confirm('删除该账目？'))return;
+  try{await api('/txns/'+editingId,{method:'DELETE'});$('modal').classList.remove('show');await load();await loadSummary();}
+  catch(e){showBanner('删除失败：'+e.message);}
+};
+async function delTxn(id){if(!confirm('删除该账目？'))return;try{await api('/txns/'+id,{method:'DELETE'});await load();await loadSummary();}catch(e){showBanner('删除失败：'+e.message);}}
+$('month').value=thisMonth();
+$('month').onchange=()=>{load();loadSummary();};
+$('filterType').onchange=load;
+load();loadSummary();
+</script>
+</body>
+</html>

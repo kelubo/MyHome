@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每周菜单 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#0ca678; --accent2:#087f5b; --line:#e5e7eb; --radius:12px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.weekbar{display:flex;align-items:center;gap:12px;padding:14px 22px;flex-wrap:wrap}
+.weekbar .label{font-size:16px;font-weight:700}
+.weekbar .spacer{flex:1}
+.gridwrap{padding:0 22px 30px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:860px;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+th,td{border:1px solid var(--line);vertical-align:top}
+th{background:#f0fdf9;padding:10px 8px;font-size:13px;text-align:center;color:var(--accent2)}
+td.meal{background:#f0fdf9;font-weight:700;font-size:13px;text-align:center;white-space:nowrap}
+th .dow{font-size:12px;color:var(--muted);font-weight:500}
+th .dt{font-size:14px}
+td.cell{min-width:120px;height:74px;padding:6px;cursor:pointer;position:relative}
+td.cell:hover{background:#f6fdfb}
+td.cell.today{background:#fff9db}
+.plan{background:#e6fcf5;border:1px solid #c3fae8;border-radius:8px;padding:5px 7px;font-size:12.5px;line-height:1.4}
+.plan .rname{font-weight:700;color:var(--accent2)}
+.plan .note{color:var(--muted)}
+.plan .del{position:absolute;top:3px;right:5px;color:var(--danger);font-size:11px;display:none}
+td.cell:hover .plan .del{display:inline}
+.addhint{color:#adb5bd;font-size:12px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(440px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🍽</div>
+  <h1>每周菜单</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="weekbar">
+  <button class="btn ghost" id="prevWk">‹ 上周</button>
+  <span class="label" id="weekLabel"></span>
+  <button class="btn ghost" id="nextWk">下周 ›</button>
+  <button class="btn ghost" id="thisWk">本周</button>
+  <div class="spacer"></div>
+  <button class="btn" id="genBtn">🛒 生成本周购物清单</button>
+</div>
+
+<div class="gridwrap">
+  <table id="grid"></table>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">安排一餐</h3>
+    <div class="field"><label>日期</label><input type="date" id="mDate"></div>
+    <div class="field"><label>餐次</label>
+      <select id="mMeal">
+        <option>早餐</option><option>午餐</option><option>晚餐</option><option>加餐</option>
+      </select>
+    </div>
+    <div class="field"><label>选择菜谱（可留空，仅填备注）</label><select id="mRecipe"><option value="">— 不指定 —</option></select></div>
+    <div class="field"><label>备注（如「出去吃」「外卖」）</label><input type="text" id="mNote" placeholder="出去吃"></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/apps/menu/api';
+const RMENU='/apps/recipes/api';
+const PANTRY='/apps/pantry/api';
+const $=id=>document.getElementById(id);
+const banner=$('banner');
+function showBanner(m){banner.textContent=m;banner.style.display='block';}
+function hideBanner(){banner.style.display='none';}
+async function api(path,opts){const r=await fetch(API+path,opts);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function todayStr(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function mondayOf(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);return x;}
+const DOW=['一','二','三','四','五','六','日'];
+const MEALS=['早餐','午餐','晚餐','加餐'];
+
+let monday=new Date(mondayOf(new Date()));
+let recipesById={};
+let plans=[];       // 本周计划
+let editingId=null;
+
+function weekRange(){
+  const start=new Date(monday);
+  const end=new Date(monday);end.setDate(end.getDate()+6);
+  return {start,end};
+}
+function renderWeekLabel(){
+  const {start,end}=weekRange();
+  $('weekLabel').textContent=todayStr(start).slice(5)+' ~ '+todayStr(end).slice(5)+'（周一~周日）';
+}
+async function loadRecipes(){
+  try{const rs=await (await fetch(RMENU+'/recipes')).json();
+    recipesById={};const sel=$('mRecipe');sel.innerHTML='<option value="">— 不指定 —</option>';
+    rs.forEach(r=>{recipesById[r.id]=r;const o=document.createElement('option');o.value=r.id;o.textContent=r.name;sel.appendChild(o);});
+  }catch(e){}
+}
+async function loadPlans(){
+  const {start,end}=weekRange();
+  try{plans=await api('/plans?start='+todayStr(start)+'&end='+todayStr(end));hideBanner();}
+  catch(e){plans=[];showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 menu-api 后端与 menu 数据库）。');}
+  renderGrid();
+}
+function renderGrid(){
+  const {start}=weekRange();
+  const today=todayStr();
+  let html='<tr><th>餐次 \\ 日期</th>';
+  for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const ds=todayStr(d);
+    html+='<th><div class="dow">周'+DOW[i]+'</div><div class="dt">'+ds.slice(5)+'</div></th>';}
+  html+='</tr>';
+  const planAt=(ds,meal)=>plans.find(p=>p.date===ds&&p.meal_type===meal);
+  MEALS.forEach(meal=>{
+    html+='<tr><td class="meal">'+meal+'</td>';
+    for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const ds=todayStr(d);
+      const p=planAt(ds,meal);
+      html+='<td class="cell'+(ds===today?' today':'')+'" data-date="'+ds+'" data-meal="'+meal+'">';
+      if(p){
+        const r=p.recipe_id?recipesById[p.recipe_id]:null;
+        html+='<div class="plan" data-id="'+p.id+'"><span class="del" data-id="'+p.id+'">✕</span>'+
+          (r?'<div class="rname">'+esc(r.name)+'</div>':'')+
+          (p.note?'<div class="note">'+esc(p.note)+'</div>':'')+'</div>';
+      }else{
+        html+='<div class="addhint">＋</div>';
+      }
+      html+='</td>';
+    }
+    html+='</tr>';
+  });
+  $('grid').innerHTML=html;
+  // 事件委托
+  $('grid').querySelectorAll('td.cell').forEach(td=>{
+    td.onclick=e=>{
+      if(e.target.classList.contains('del')){delPlan(+e.target.dataset.id);return;}
+      const existing=plans.find(p=>p.date===td.dataset.date&&p.meal_type===td.dataset.meal);
+      openModal(existing,td.dataset.date,td.dataset.meal);
+    };
+  });
+}
+function openModal(p,ds,meal){
+  editingId=p?p.id:null;
+  $('modalTitle').textContent=p?'编辑这餐':'安排一餐';
+  $('mDate').value=p?p.date:ds;
+  $('mMeal').value=p?p.meal_type:meal;
+  $('mRecipe').value=p&&p.recipe_id?String(p.recipe_id):'';
+  $('mNote').value=p?p.note:'';
+  $('mDelete').style.display=p?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+async function delPlan(id){
+  if(!confirm('删除这餐安排？'))return;
+  try{await api('/plans/'+id,{method:'DELETE'});await loadPlans();}catch(e){showBanner('删除失败：'+e.message);}
+}
+$('mSave').onclick=async()=>{
+  const payload={date:$('mDate').value,meal_type:$('mMeal').value,
+    recipe_id:$('mRecipe').value?parseInt($('mRecipe').value):null,note:$('mNote').value.trim()};
+  if(!payload.date){showBanner('日期必填');return;}
+  try{
+    if(editingId)await api('/plans/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show');await loadPlans();
+  }catch(e){showBanner('保存失败：'+e.message);}
+};
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',e=>{if(e.target===$('modal'))$('modal').classList.remove('show');});
+$('prevWk').onclick=()=>{monday.setDate(monday.getDate()-7);renderWeekLabel();loadPlans();};
+$('nextWk').onclick=()=>{monday.setDate(monday.getDate()+7);renderWeekLabel();loadPlans();};
+$('thisWk').onclick=()=>{monday=new Date(mondayOf(new Date()));renderWeekLabel();loadPlans();};
+$('genBtn').onclick=async()=>{
+  // 聚合本周有菜谱的计划 → 食材 → 写入购物清单（pantry, location=shopping）
+  const withRecipe=plans.filter(p=>p.recipe_id&&recipesById[p.recipe_id]);
+  if(!withRecipe.length){showBanner('本周还没有安排具体菜谱，无法生成购物清单。');return;}
+  if(!confirm('将把本周所有菜谱的食材汇总后加入「购物清单」（可在购物清单里调整数量）。继续？'))return;
+  const items={};
+  withRecipe.forEach(p=>{
+    const r=recipesById[p.recipe_id];
+    r.ingredients.split('\n').forEach(line=>{
+      line=line.trim();if(!line)return;
+      const m=line.split(/\s+/);
+      let name=line,qty=1,unit='';
+      if(m.length>=2&&!isNaN(m[1])){name=m[0];qty=parseFloat(m[1])||1;unit=m.slice(2).join('');}
+      const key=name+'|'+unit;
+      if(items[key])items[key].quantity+=qty;else items[key]={name,quantity:qty,unit};
+    });
+  });
+  let ok=0,fail=0;
+  for(const k in items){
+    const it=items[k];
+    try{
+      const r=await fetch(PANTRY+'/items',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:it.name,category:'食材',location:'shopping',quantity:it.quantity,unit:it.unit,note:'每周菜单生成'})});
+      if(r.ok)ok++;else fail++;
+    }catch(e){fail++;}
+  }
+  if(fail===0)showBanner('✅ 已把 '+ok+' 种食材加入购物清单（位于「购物清单·冰箱库存」应用）。');
+  else showBanner('已加入 '+ok+' 种，'+fail+' 种失败（购物清单应用可能未运行）。');
+  setTimeout(hideBanner,4000);
+};
+renderWeekLabel();
+loadRecipes();
+loadPlans();
+</script>
+</body>
+</html>

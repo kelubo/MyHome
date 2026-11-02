@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭药箱 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#ef4444; --accent2:#dc2626; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar input,.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.stats{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:90px;text-align:center}
+.stat .n{font-size:22px;font-weight:800}
+.stat .l{font-size:12px;color:var(--muted)}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(239,68,68,.12)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card .title{font-size:17px;font-weight:700;flex:1;line-height:1.3}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#fee2e2;color:var(--accent);font-weight:600}
+.exp{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.exp.ok{background:#dcfce7;color:#16a34a}
+.exp.soon{background:#fef3c7;color:#d97706}
+.exp.expired{background:#fde2e2;color:#dc2626}
+.exp.unknown{background:#eef2f7;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted);margin-top:6px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(480px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">💊</div>
+  <h1>家庭药箱</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="搜药名 / 用途" style="min-width:200px">
+  <select id="filterCategory"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新增药品</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新增药品</h3>
+    <div class="row">
+      <div class="field"><label>药名 *</label><input type="text" id="mName" placeholder="如：布洛芬缓释胶囊"></div>
+      <div class="field"><label>分类</label><input type="text" id="mCategory" placeholder="感冒/退烧/外伤…" list="catList"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>规格</label><input type="text" id="mSpec" placeholder="如 0.3g*20粒"></div>
+      <div class="field"><label>存放位置</label><input type="text" id="mLocation" placeholder="如 客厅药箱"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>余量</label><input type="number" id="mQuantity" value="1" min="0"></div>
+      <div class="field"><label>单位</label>
+        <select id="mUnit"><option>盒</option><option>瓶</option><option>片</option><option>支</option><option>袋</option><option>其他</option></select>
+      </div>
+    </div>
+    <div class="field"><label>有效期</label><input type="date" id="mExpiry"></div>
+    <div class="field"><label>用法用量 / 用途</label><textarea id="mUsage" placeholder="如：发热牙痛，饭后服用"></textarea></div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="注意事项、开封日期等"></textarea></div>
+    <datalist id="catList"></datalist>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/medkit/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let meds = [];
+let editingId = null;
+
+async function load(){
+  const q=$('search').value.trim(), c=$('filterCategory').value;
+  const qs=[]; if(q) qs.push('q='+encodeURIComponent(q)); if(c) qs.push('category='+encodeURIComponent(c));
+  try{
+    meds = await api('/medicines'+(qs.length?'?'+qs.join('&'):''));
+    hideBanner();
+  }catch(e){
+    meds=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 medkit-api 后端与 medkit 数据库）。');
+  }
+  render();
+}
+async function loadStats(){
+  try{
+    const all = await api('/medicines');
+    let soon=0, expired=0;
+    all.forEach(m=>{ if(m.status==='soon') soon++; else if(m.status==='expired') expired++; });
+    $('stats').innerHTML =
+      statBox(all.length,'总计')+statBox(soon,'临期(≤90天)','#d97706')+statBox(expired,'已过期','#dc2626');
+  }catch(e){}
+}
+async function loadCategories(){
+  try{
+    const cs=await api('/categories');
+    const sel=$('filterCategory');
+    cs.forEach(x=>{
+      const o=document.createElement('option'); o.value=x.category; o.textContent=x.category+' ('+x.count+')'; sel.appendChild(o);
+      const o2=document.createElement('option'); o2.value=x.category; o2.textContent=x.category; $('catList').appendChild(o2);
+    });
+  }catch(e){}
+}
+function statBox(n,l,color){
+  return '<div class="stat"><div class="n" style="color:'+(color||'var(--accent)')+'">'+n+'</div><div class="l">'+l+'</div></div>';
+}
+function expLabel(m){
+  if(m.status==='expired') return '已过期 '+(-m.days_left)+' 天';
+  if(m.status==='soon') return '剩 '+m.days_left+' 天';
+  if(m.status==='ok') return '剩 '+m.days_left+' 天';
+  return '无有效期';
+}
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!meds.length){ box.innerHTML='<div class="empty">家庭药箱还空空如也。<br>点击右上角「＋ 新增药品」，登记药名、规格与有效期，临期会自动提醒。</div>'; return; }
+  meds.forEach(m=>{
+    const el=document.createElement('div'); el.className='card';
+    const meta=[];
+    if(m.spec) meta.push(m.spec);
+    if(m.location) meta.push('📍 '+m.location);
+    if(m.quantity!=null) meta.push('余量 '+m.quantity+(m.unit||''));
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge"></span></div>'+
+      '<div style="margin:6px 0"><span class="exp '+m.status+'"></span></div>'+
+      (meta.length?'<div class="meta"></div>':'')+
+      (m.usage?'<div class="meta" style="margin-top:4px"></div>':'')+
+      (m.notes?'<div class="meta" style="margin-top:4px"></div>':'');
+    el.querySelector('.title').textContent=m.name;
+    el.querySelector('.badge').textContent=m.category;
+    el.querySelector('.exp').textContent=expLabel(m);
+    let idx=2;
+    if(meta.length){ el.querySelector('.meta').textContent=meta.join(' · '); }
+    const metas=el.querySelectorAll('.meta');
+    if(m.usage) metas[idx-1+(meta.length?1:0)].textContent='💡 '+m.usage;
+    if(m.notes) metas[metas.length-1].textContent=m.notes;
+    el.onclick=()=>openModal(m);
+    box.appendChild(el);
+  });
+}
+function openModal(m){
+  editingId = m ? m.id : null;
+  $('modalTitle').textContent = m ? '编辑药品' : '新增药品';
+  $('mName').value = m?(m.name||''):'';
+  $('mCategory').value = m?(m.category||'其他'):'';
+  $('mSpec').value = m?(m.spec||''):'';
+  $('mLocation').value = m?(m.location||''):'';
+  $('mQuantity').value = m?(m.quantity||0):1;
+  $('mUnit').value = m?(m.unit||'盒'):'盒';
+  $('mExpiry').value = m?(m.expiry||''):'';
+  $('mUsage').value = m?(m.usage||''):'';
+  $('mNotes').value = m?(m.notes||''):'';
+  $('mDelete').style.display = m?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+$('mSave').onclick=async()=>{
+  const payload={
+    name:$('mName').value.trim(), category:$('mCategory').value.trim()||'其他',
+    spec:$('mSpec').value.trim(), location:$('mLocation').value.trim(),
+    quantity:parseInt($('mQuantity').value||'0',10)||0, unit:$('mUnit').value,
+    expiry:$('mExpiry').value, usage:$('mUsage').value.trim(), notes:$('mNotes').value.trim()
+  };
+  if(!payload.name){ showBanner('药名必填'); return; }
+  try{
+    if(editingId) await api('/medicines/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/medicines',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show'); await load(); await loadStats(); await loadCategories();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该药品？')) return;
+  try{ await api('/medicines/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await load(); await loadStats(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+$('search').oninput=load;
+$('filterCategory').onchange=load;
+loadCategories(); loadStats(); load();
+</script>
+</body>
+</html>

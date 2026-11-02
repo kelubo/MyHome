@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭任务看板 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 22px 30px}
+@media(max-width:880px){ .board{grid-template-columns:1fr} }
+.col{background:#eef1f7;border-radius:14px;padding:12px;min-height:120px}
+.col h3{font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.col h3 .cnt{font-size:12px;color:var(--muted);background:#fff;padding:1px 8px;border-radius:10px}
+.tcard{background:#fff;border:1px solid var(--line);border-radius:11px;padding:11px;margin-bottom:10px;cursor:pointer;transition:.15s;position:relative}
+.tcard:hover{box-shadow:0 4px 14px rgba(37,99,235,.12)}
+.tcard .tt{font-size:15px;font-weight:600;margin-bottom:6px;line-height:1.4}
+.tcard .meta{font-size:12px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pri{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.pri.高{background:#fee2e2;color:#b91c1c}
+.pri.中{background:#fef9c3;color:#a16207}
+.pri.低{background:#f1f5f9;color:#475569}
+.tcard .del{position:absolute;top:8px;right:8px;font-size:12px;color:var(--muted);border:none;background:transparent;cursor:pointer;opacity:0;transition:.15s}
+.tcard:hover .del{opacity:1}
+.tcard .del:hover{color:var(--danger)}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:14px 0}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(460px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1;margin-bottom:12px}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">✅</div>
+  <h1>家庭任务看板</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新建任务</button>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新建任务</h3>
+    <div class="field"><label>任务标题</label><input type="text" id="mTitle" placeholder="如：缴这个月水电费"></div>
+    <div class="row">
+      <div class="field"><label>负责人</label><input type="text" id="mAssignee" placeholder="谁来做"></div>
+      <div class="field"><label>优先级</label>
+        <select id="mPri"><option>高</option><option>中</option><option>低</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>状态</label>
+        <select id="mStatus">
+          <option value="todo">待办</option><option value="doing">进行中</option><option value="done">已完成</option>
+        </select>
+      </div>
+      <div class="field"><label>截止日</label><input type="date" id="mDue"></div>
+    </div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="补充说明"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/tasks/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+const COLS = [
+  {key:'todo', name:'待办'},
+  {key:'doing', name:'进行中'},
+  {key:'done', name:'已完成'},
+];
+let tasks = [];
+let editingId = null;
+
+async function load(){
+  try{
+    tasks = await api('/tasks'); hideBanner();
+  }catch(e){
+    tasks=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 tasks-api 后端与 tasks 数据库）。');
+  }
+  render();
+}
+function render(){
+  const board=$('board'); board.innerHTML='';
+  COLS.forEach(col=>{
+    const items = tasks.filter(t=>t.status===col.key);
+    const cdiv=document.createElement('div'); cdiv.className='col';
+    cdiv.innerHTML = '<h3>'+col.name+'<span class="cnt">'+items.length+'</span></h3>';
+    if(!items.length) cdiv.innerHTML += '<div class="empty">暂无任务</div>';
+    items.forEach(t=>{
+      const el=document.createElement('div'); el.className='tcard';
+      const due = t.due_date ? ('📅 '+t.due_date) : '';
+      el.innerHTML =
+        '<button class="del" title="删除">✕</button>'+
+        '<div class="tt"></div>'+
+        '<div class="meta"><span class="pri '+t.priority+'">'+t.priority+'</span>'+
+        (t.assignee?'<span>👤 '+t.assignee+'</span>':'')+
+        (due?'<span>'+due+'</span>':'')+'</div>';
+      el.querySelector('.tt').textContent=t.title;
+      el.querySelector('.del').onclick=(e)=>{ e.stopPropagation(); delTask(t); };
+      el.onclick=()=>openModal(t);
+      cdiv.appendChild(el);
+    });
+    board.appendChild(cdiv);
+  });
+}
+function openModal(t){
+  editingId = t ? t.id : null;
+  $('modalTitle').textContent = t ? '编辑任务' : '新建任务';
+  $('mTitle').value = t?t.title:'';
+  $('mAssignee').value = t?(t.assignee||''):'';
+  $('mPri').value = t?(t.priority||'中'):'中';
+  $('mStatus').value = t?(t.status||'todo'):'todo';
+  $('mDue').value = t?t.due_date:'';
+  $('mNotes').value = t?(t.notes||''):'';
+  $('mDelete').style.display = t?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+$('mSave').onclick=async()=>{
+  const payload={
+    title:$('mTitle').value.trim(), assignee:$('mAssignee').value.trim(),
+    priority:$('mPri').value, status:$('mStatus').value, due_date:$('mDue').value, notes:$('mNotes').value.trim()
+  };
+  if(!payload.title){ showBanner('标题必填'); return; }
+  try{
+    if(editingId) await api('/tasks/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show'); await load();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+async function delTask(t){
+  if(!confirm('删除该任务？')) return;
+  try{ await api('/tasks/'+t.id,{method:'DELETE'}); await load(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+}
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该任务？')) return;
+  try{ await api('/tasks/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await load(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+load();
+</script>
+</body>
+</html>

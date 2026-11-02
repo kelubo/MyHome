@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>纪念日 · 家庭日历 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(37,99,235,.12)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.card .title{font-size:17px;font-weight:700;flex:1}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#eef2ff;color:var(--accent);font-weight:600}
+.card .date{color:var(--muted);font-size:13px;margin-bottom:6px}
+.card .notes{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+.cd{display:inline-block;margin-top:10px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px}
+.cd.today{background:#fee2e2;color:#b91c1c}
+.cd.soon{background:#ecfdf5;color:#047857}
+.cd.far{background:#f1f5f9;color:#475569}
+.cd.past{background:#fafafa;color:#9ca3af}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+/* 模态框 */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(460px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1;margin-bottom:12px}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">📅</div>
+  <h1>纪念日 · 家庭日历</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <select id="filterCat"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新建纪念日</button>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新建纪念日</h3>
+    <div class="field"><label>标题</label><input type="text" id="mTitle" placeholder="如：爸爸生日"></div>
+    <div class="row">
+      <div class="field"><label>日期</label><input type="date" id="mDate"></div>
+      <div class="field"><label>分类</label>
+        <select id="mCat">
+          <option>生日</option><option>纪念日</option><option>缴费</option>
+          <option>节日</option><option>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>重复</label>
+      <select id="mRepeat">
+        <option value="yearly">每年</option>
+        <option value="monthly">每月</option>
+        <option value="none">不重复</option>
+      </select>
+    </div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="如：记得订蛋糕 / 提前订餐厅"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/calendar/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let events = [];
+let editingId = null;
+
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseD(s){ if(!s) return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+
+function countdown(e){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = parseD(e.date); if(!d) return null;
+  if(e.repeat==='yearly'){
+    let y=d.getFullYear();
+    let thisYear=new Date(y,d.getMonth(),d.getDate());
+    let next=new Date(y+1,d.getMonth(),d.getDate());
+    const target = thisYear<today ? next : thisYear;
+    return Math.round((target-today)/86400000);
+  }
+  if(e.repeat==='monthly'){
+    let y=today.getFullYear(), m=today.getMonth();
+    let t=new Date(y,m,Math.min(d.getDate(),28));
+    if(t<today) t=new Date(y,m+1,Math.min(d.getDate(),28));
+    return Math.round((t-today)/86400000);
+  }
+  return Math.round((d-today)/86400000);
+}
+
+function cdHtml(days){
+  if(days===null) return '';
+  if(days===0) return '<span class="cd today">🎉 就是今天</span>';
+  if(days>0) return '<span class="cd '+(days<=14?'soon':'far')+'">还有 '+days+' 天</span>';
+  return '<span class="cd past">已过 '+(-days)+' 天</span>';
+}
+
+async function load(){
+  const cat = $('filterCat').value;
+  try{
+    events = await api('/events'+(cat?'?category='+encodeURIComponent(cat):''));
+    hideBanner();
+  }catch(e){
+    events=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 calendar-api 后端与 calendar 数据库）。');
+  }
+  render();
+}
+
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!events.length){ box.innerHTML='<div class="empty">还没有纪念日。<br>点击右上角「＋ 新建纪念日」添加生日、缴费日、节日等。</div>'; return; }
+  const sorted=[...events].sort((a,b)=>{
+    const ca=countdown(a), cb=countdown(b);
+    const va=(ca===null?9999:Math.abs(ca)); // 简单：按原始日期排序更直观
+    return parseD(a.date)-parseD(b.date);
+  });
+  sorted.forEach(e=>{
+    const cd=countdown(e);
+    const el=document.createElement('div'); el.className='card';
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge"></span></div>'+
+      '<div class="date"></div>'+
+      (e.notes?'<div class="notes"></div>':'')+
+      cdHtml(cd);
+    el.querySelector('.title').textContent=e.title||'(无标题)';
+    el.querySelector('.badge').textContent=e.category||'其他';
+    el.querySelector('.date').textContent='📆 '+e.date+(e.repeat==='yearly'?' · 每年':e.repeat==='monthly'?' · 每月':'');
+    if(e.notes) el.querySelector('.notes').textContent=e.notes;
+    el.onclick=()=>openModal(e);
+    box.appendChild(el);
+  });
+}
+
+function openModal(e){
+  editingId = e ? e.id : null;
+  $('modalTitle').textContent = e ? '编辑纪念日' : '新建纪念日';
+  $('mTitle').value = e?e.title:'';
+  $('mDate').value = e?e.date:todayStr();
+  $('mCat').value = e?(e.category||'其他'):'生日';
+  $('mRepeat').value = e?(e.repeat||'yearly'):'yearly';
+  $('mNotes').value = e?(e.notes||''):'';
+  $('mDelete').style.display = e?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+
+$('mSave').onclick=async()=>{
+  const payload={
+    title:$('mTitle').value.trim(), date:$('mDate').value,
+    category:$('mCat').value, repeat:$('mRepeat').value, notes:$('mNotes').value.trim()
+  };
+  if(!payload.title||!payload.date){ showBanner('标题与日期必填'); return; }
+  try{
+    if(editingId) await api('/events/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show');
+    await load();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除这个纪念日？')) return;
+  try{ await api('/events/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await load(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+
+$('filterCat').onchange=load;
+
+// 初始化分类下拉
+['生日','纪念日','缴费','节日','其他'].forEach(c=>{
+  const o=document.createElement('option'); o.value=c; o.textContent=c; $('filterCat').appendChild(o);
+});
+
+load();
+</script>
+</body>
+</html>
