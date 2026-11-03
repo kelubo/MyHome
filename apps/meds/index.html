@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>服药提醒打卡 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent2:#1d4ed8; --line:#e5e7eb; --radius:14px; --danger:#dc2626; --ok:#16a34a; --warn:#d97706;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+header.top .today{font-size:13px;color:var(--muted)}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.ok{background:var(--ok)}
+.btn.ok:hover{background:#15803d}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.stats{display:flex;gap:10px;padding:14px 22px 4px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:92px;text-align:center}
+.stat .n{font-size:22px;font-weight:800}
+.stat .l{font-size:12px;color:var(--muted)}
+.section-title{font-size:16px;font-weight:700;margin:20px 22px 10px;display:flex;align-items:center;gap:8px}
+.section-title .spacer{flex:1}
+.today-wrap{padding:0 22px 8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.today-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px}
+.today-card.done{border-color:#bbf7d0;background:#f0fdf4}
+.today-card.missed{border-color:#fecaca;background:#fef2f2}
+.today-card .info{flex:1;min-width:0}
+.today-card .med{font-size:16px;font-weight:700}
+.today-card .sub{font-size:12px;color:var(--muted);margin-top:3px}
+.today-card .acts{display:flex;gap:6px;flex-shrink:0}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card .title{font-size:17px;font-weight:700;flex:1}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-weight:600}
+.badge.off{background:#eef2f7;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted);margin-top:6px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">🔔</div>
+  <h1>服药提醒打卡</h1>
+  <div class="spacer"></div>
+  <div class="today" id="todayLabel"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="stats" id="stats"></div>
+
+<div class="section-title">📅 今日打卡 <span class="spacer"></span><button class="btn sm ghost" id="prevDay">前一天</button><button class="btn sm ghost" id="nextDay">后一天</button></div>
+<div class="today-wrap" id="todayList"></div>
+
+<div class="section-title">💊 服药计划 <span class="spacer"></span><button class="btn" id="addBtn">＋ 新增计划</button></div>
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新增服药计划</h3>
+    <div class="row">
+      <div class="field"><label>成员 *</label><input type="text" id="mMember" placeholder="如 爸爸 / 宝宝"></div>
+      <div class="field"><label>药品名称 *</label><input type="text" id="mMedicine" placeholder="如 降压药"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>剂量</label><input type="text" id="mDosage" placeholder="如 1片 / 5ml"></div>
+      <div class="field"><label>频次</label>
+        <select id="mFrequency">
+          <option>每日1次</option><option>每日2次</option><option>每日3次</option>
+          <option>每周1次</option><option>每周2次</option><option>每周3次</option><option>按需</option><option>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>服药时间点（逗号分隔，如 08:00,20:00）</label><input type="text" id="mSlots" placeholder="08:00,20:00"></div>
+    <div class="row">
+      <div class="field"><label>开始日</label><input type="date" id="mStart"></div>
+      <div class="field"><label>结束日（长期留空）</label><input type="date" id="mEnd"></div>
+    </div>
+    <div class="field"><label><input type="checkbox" id="mActive" checked> 启用该计划</label></div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="服用注意事项"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/meds/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function statBox(n,l,color){
+  return '<div class="stat"><div class="n" style="color:'+(color||'var(--accent)')+'">'+n+'</div><div class="l">'+l+'</div></div>';
+}
+
+let viewDate = new Date().toISOString().slice(0,10);
+let plans = [];
+let editingId = null;
+
+function fmtDate(d){ return d; }
+async function loadStats(){
+  try{
+    const s=await api('/stats');
+    $('stats').innerHTML =
+      statBox(s.plans,'服药计划')+
+      statBox(s.due,'今日待服','#d97706')+
+      statBox(s.done,'今日已服','#16a34a')+
+      statBox(s.missed,'漏服/跳过','#dc2626');
+  }catch(e){}
+}
+async function loadToday(){
+  $('todayLabel').textContent = '日期：'+viewDate;
+  try{
+    const data=await api('/today?date='+encodeURIComponent(viewDate));
+    const box=$('todayList'); box.innerHTML='';
+    if(!data.items.length){ box.innerHTML='<div class="empty">这一天没有需要打卡的服药项（计划未生效或无有效计划）。</div>'; return; }
+    data.items.forEach(it=>{
+      const el=document.createElement('div');
+      el.className='today-card'+(it.taken?' done':'')+((!it.taken&&it.log_id)?' missed':'');
+      const takenAt = it.taken_at ? ('✓ '+it.taken_at.slice(11,16)) : '';
+      el.innerHTML =
+        '<div class="info"><div class="med"></div>'+
+        '<div class="sub"></div></div>'+
+        '<div class="acts">'+
+          (it.taken
+            ? '<button class="btn sm ghost" data-act="undo">↩ 撤销</button>'
+            : '<button class="btn sm ok" data-act="taken">已服</button><button class="btn sm ghost" data-act="skip">漏服</button>')+
+        '</div>';
+      el.querySelector('.med').textContent=(it.member?it.member+' · ':'')+it.medicine+(it.dosage?(' '+it.dosage):'')+' · '+it.time;
+      el.querySelector('.sub').textContent=(it.taken?'已服药 '+takenAt:'待服药')+(it.note?(' · '+it.note):'');
+      el.querySelectorAll('.acts button').forEach(b=>{
+        b.onclick=(e)=>{ e.stopPropagation(); checkIn(it.plan_id, it.time, b.dataset.act); };
+      });
+      box.appendChild(el);
+    });
+  }catch(e){ showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 meds-api 后端与 meds 数据库）。'); }
+}
+async function checkIn(planId, time, act){
+  const taken = act==='taken';
+  try{
+    await api('/logs',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan_id:planId, scheduled_date:viewDate, scheduled_time:time, taken})});
+    await loadToday(); await loadStats();
+  }catch(e){ showBanner('打卡失败：'+e.message); }
+}
+async function loadPlans(){
+  try{
+    plans = await api('/plans');
+  }catch(e){ plans=[]; }
+  const box=$('list'); box.innerHTML='';
+  if(!plans.length){ box.innerHTML='<div class="empty">还没有服药计划。<br>点击右上角「＋ 新增计划」，登记谁吃什么药、剂量、每天几点，之后在上方「今日打卡」一键记录是否服用。</div>'; return; }
+  plans.forEach(p=>{
+    const el=document.createElement('div'); el.className='card';
+    const slots=p.time_slots.join('、');
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge'+(p.active?'':' off')+'"></span></div>'+
+      '<div class="meta"></div>'+
+      '<div class="meta"></div>'+
+      (p.notes?'<div class="meta" style="margin-top:4px"></div>':'');
+    el.querySelector('.title').textContent=(p.member?p.member+' · ':'')+p.medicine;
+    el.querySelector('.badge').textContent=p.active?p.frequency:'已停用';
+    el.querySelector('.meta').textContent=p.dosage?('💊 '+p.dosage):'';
+    const metas=el.querySelectorAll('.meta');
+    metas[1].textContent='⏰ '+slots;
+    if(p.notes) metas[metas.length-1].textContent='📝 '+p.notes;
+    el.onclick=()=>openModal(p);
+    box.appendChild(el);
+  });
+}
+function openModal(p){
+  editingId = p ? p.id : null;
+  $('modalTitle').textContent = p ? '编辑服药计划' : '新增服药计划';
+  $('mMember').value = p?(p.member||''):'';
+  $('mMedicine').value = p?(p.medicine||''):'';
+  $('mDosage').value = p?(p.dosage||''):'';
+  $('mFrequency').value = p?(p.frequency||'每日1次'):'每日1次';
+  $('mSlots').value = p?p.time_slots.join(','):'08:00';
+  $('mStart').value = p?(p.start_date||''):'';
+  $('mEnd').value = p?(p.end_date||''):'';
+  $('mActive').checked = p?!!p.active:true;
+  $('mNotes').value = p?(p.notes||''):'';
+  $('mDelete').style.display = p?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+$('mSave').onclick=async()=>{
+  const payload={
+    member:$('mMember').value.trim(), medicine:$('mMedicine').value.trim(),
+    dosage:$('mDosage').value.trim(), frequency:$('mFrequency').value,
+    time_slots:$('mSlots').value.split(',').map(s=>s.trim()).filter(Boolean),
+    start_date:$('mStart').value, end_date:$('mEnd').value,
+    active:$('mActive').checked, notes:$('mNotes').value.trim()
+  };
+  if(!payload.medicine){ showBanner('药品名称必填'); return; }
+  try{
+    if(editingId) await api('/plans/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show'); await loadPlans(); await loadStats(); await loadToday();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该服药计划及全部打卡记录？')) return;
+  try{ await api('/plans/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await loadPlans(); await loadStats(); await loadToday(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+$('prevDay').onclick=()=>{ viewDate=shiftDay(viewDate,-1); loadToday(); };
+$('nextDay').onclick=()=>{ viewDate=shiftDay(viewDate,1); loadToday(); };
+function shiftDay(d,n){
+  const dt=new Date(d+'T00:00:00'); dt.setDate(dt.getDate()+n);
+  return dt.toISOString().slice(0,10);
+}
+loadStats(); loadToday(); loadPlans();
+</script>
+</body>
+</html>

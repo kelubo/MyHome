@@ -86,6 +86,34 @@ services:
     networks:
       - home
 
+  # ── 服药提醒打卡后端 API ───────────────────────────────
+  meds-api:
+    build: ./apps/meds/server
+    container_name: myhome-meds-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/meds
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
+  # ── 家庭通讯录后端 API ───────────────────────────────
+  contacts-api:
+    build: ./apps/contacts/server
+    container_name: myhome-contacts-api
+    environment:
+      DATABASE_URL: postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/contacts
+    expose:
+      - "5000"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - home
+
   portal:
     image: nginx:alpine
     container_name: myhome-portal
@@ -124,6 +152,8 @@ services:
       - energy-api
       - insurance-api
       - certs-api
+      - meds-api
+      - contacts-api
       - portal-api
     networks:
       - home

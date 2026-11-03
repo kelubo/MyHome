@@ -36,7 +36,9 @@ MyHome/
 │   └── growth/            # 孩子成长日志（身高体重/疫苗/里程碑，含后端 API）
 │   └── energy/            # 家庭能耗记录（水/电/燃气用量与费用，含后端 API）
 │   └── insurance/         # 家庭保险保单（到期提醒，含后端 API）
-│   └── certs/             # 家庭证件档案（到期提醒，含后端 API）
+│   ├── certs/             # 家庭证件档案（到期提醒，含后端 API）
+│   ├── meds/              # 服药提醒打卡（用药计划 + 每日打卡，含后端 API）
+│   └── contacts/          # 家庭通讯录（家人/服务商/紧急联系人，含后端 API）
 ├── nginx/                 # 集成用反向代理配置（路径路由）
 ├── docker-compose.yml     # 集成模式一键启动
 ├── apps.json              # 应用清单（门户读取）
@@ -81,6 +83,8 @@ MyHome/
 - `/apps/energy/` → 家庭能耗记录（每月水/电/燃气用量与费用，按年份汇总，含后端 API）
 - `/apps/insurance/` → 家庭保险保单（车险/医疗险/房屋险等，到期提醒与年度保费汇总，含后端 API）
 - `/apps/certs/` → 家庭证件档案（身份证/护照/房产证等证照，到期临期/过期高亮，含后端 API）
+- `/apps/meds/` → 服药提醒打卡（用药计划 + 每日打卡，含后端 API）
+- `/apps/contacts/` → 家庭通讯录（家人/服务商/紧急联系人，含后端 API）
 - 其它路径按文件/目录直接提供（文档、拓扑图等）
 
 ```bash
@@ -356,6 +360,12 @@ python -m http.server 8080
 ### 家庭证件档案
 登记身份证/护照/房产证/驾照等重要证照：持有人、证件号（建议脱敏）、签发机关与到期日；临期与过期自动高亮提醒（扫描件可存入「家庭文档归档」）。纯数据库应用。
 
+### 服药提醒打卡
+与「家庭药箱」互补：药箱管药品库存与有效期，本应用管「每天按时吃没吃」。登记家庭成员的用药计划（谁、吃什么药、剂量、每天几点），每天在「今日打卡」一键记录是否已服，漏服/跳过高亮提醒。纯数据库应用。
+
+### 家庭通讯录
+集中管理家人、亲友、服务商与紧急联系人：电话（可多个）、微信、邮箱、单位、地址与关系/角色，一键查询，找号码不再翻聊天记录。纯数据库应用。
+
 ### 应用开关（启用 / 停用）
 
 门户首页右上角「⚙️ 管理应用」可逐个开启或关闭应用：
@@ -390,7 +400,7 @@ docker compose up -d --build
 - 首次构建会编译**各应用后端镜像（含 portal-api）+ portal + nginx**，第一次较慢（几分钟到十几分钟，取决于机器与网络）。
 - 构建完成后，`postgres-init` 脚本会自动建库；各 api 首次启动写入示例数据。
 - 等待约 10~30 秒让数据库就绪，然后浏览器访问 `http://<主机IP>:8080/`。
-- 门户应显示 **29 个应用卡片**，点进去即可使用。
+- 门户应显示 **31 个应用卡片**，点进去即可使用。
 
 > 所有应用都依赖后端 API（除 `home` 是纯静态）。直接双击打开某个 `index.html` 会因连不上后端而在页面顶部报错——**必须走 `docker compose` 集成模式**。
 
@@ -404,7 +414,7 @@ docker compose up -d --build
   POSTGRES_PASSWORD=你的强密码
   POSTGRES_DB=postgres
   ```
-- `docker-compose.yml` 中所有口令均走 `${POSTGRES_PASSWORD}`（**共 29 处**：1 处 `postgres` 服务的 `POSTGRES_PASSWORD` + 28 处各 `*-api` 服务的 `DATABASE_URL`，格式 `postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/<app>`），docker compose 自动读取 `.env` 完成替换。
+- `docker-compose.yml` 中所有口令均走 `${POSTGRES_PASSWORD}`（**共 31 处**：1 处 `postgres` 服务的 `POSTGRES_PASSWORD` + 30 处各 `*-api` 服务的 `DATABASE_URL`，格式 `postgresql://myhome:${POSTGRES_PASSWORD}@postgres:5432/<app>`），docker compose 自动读取 `.env` 完成替换。
 - **改密码只需改 `.env` 一处**：把 `POSTGRES_PASSWORD` 改为你的强密码，再 `docker compose up -d` 让 postgres 与所有 api 用新密码重连。**务必保证 postgres 与各 api 的口令一致**，否则 api 连不上库。
 - 改密码属于破坏性变更，建议**先备份**再改（见下文备份）。
 

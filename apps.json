@@ -264,6 +264,24 @@
       "path": "/apps/certs/",
       "standalone": "需 docker 集成模式（依赖 certs-api 后端与 certs 数据库）",
       "enabled": true
+    },
+    {
+      "id": "meds",
+      "name": "服药提醒打卡",
+      "description": "家庭成员服药计划与每日打卡：谁吃什么药、几点吃，今日是否已服一目了然，漏服高亮",
+      "icon": "🔔",
+      "path": "/apps/meds/",
+      "standalone": "需 docker 集成模式（依赖 meds-api 后端与 meds 数据库）",
+      "enabled": true
+    },
+    {
+      "id": "contacts",
+      "name": "家庭通讯录",
+      "description": "家人、亲友、服务商与紧急联系人集中管理：电话/微信/单位/地址一键查询，不再翻聊天记录",
+      "icon": "📇",
+      "path": "/apps/contacts/",
+      "standalone": "需 docker 集成模式（依赖 contacts-api 后端与 contacts 数据库）",
+      "enabled": true
     }
   ]
 }

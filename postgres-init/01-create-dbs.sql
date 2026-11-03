@@ -118,4 +118,12 @@ WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'insurance')\gexec
 SELECT 'CREATE DATABASE certs'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'certs')\gexec
 
+-- 服药提醒打卡
+SELECT 'CREATE DATABASE meds'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'meds')\gexec
+
+-- 家庭通讯录
+SELECT 'CREATE DATABASE contacts'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'contacts')\gexec
+
 -- 预留：未来需要数据库的应用，在此追加 CREATE DATABASE <app>;

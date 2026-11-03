@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭通讯录 · MyHome</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --accent:#0d9488; --accent2:#0f766e; --line:#e5e7eb; --radius:14px; --danger:#dc2626;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+header.top{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+header.top .logo{font-size:26px}
+header.top h1{font-size:20px}
+header.top .spacer{flex:1}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent2)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--line)}
+.btn.danger:hover{border-color:var(--danger)}
+.banner{background:#fff4f4;color:var(--danger);border-bottom:1px solid #f3c9c9;padding:10px 22px;font-size:13px;display:none}
+.toolbar{display:flex;align-items:center;gap:10px;padding:16px 22px;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:8px 10px;border-radius:9px;border:1px solid var(--line);font-size:13px;background:#fafbff;outline:none}
+.stats{display:flex;gap:10px;padding:0 22px 14px;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:90px;text-align:center}
+.stat .n{font-size:22px;font-weight:800}
+.stat .l{font-size:12px;color:var(--muted)}
+.wrap{padding:0 22px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:.15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(13,148,136,.12)}
+.card .top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.card .title{font-size:17px;font-weight:700;flex:1}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;background:#ccfbf1;color:#0f766e;font-weight:600}
+.meta{font-size:12px;color:var(--muted);margin-top:6px}
+.empty{border:2px dashed var(--line);border-radius:16px;padding:50px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;z-index:60;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:22px;width:min(520px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.3);max-height:90vh;overflow:auto}
+.modal-box h3{font-size:18px;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:14px;outline:none;background:#fafbff;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.row{display:flex;gap:10px}
+.row .field{flex:1}
+.acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">📇</div>
+  <h1>家庭通讯录</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="/portal/">← 门户</a>
+</header>
+
+<div class="banner" id="banner"></div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="搜姓名 / 电话 / 单位 / 微信" style="min-width:220px">
+  <select id="filterCategory"><option value="">全部分类</option></select>
+  <div class="spacer"></div>
+  <button class="btn" id="addBtn">＋ 新增联系人</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="wrap" id="list"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">新增联系人</h3>
+    <div class="row">
+      <div class="field"><label>姓名 / 称呼 *</label><input type="text" id="mName" placeholder="如 爸爸"></div>
+      <div class="field"><label>分类</label>
+        <select id="mCategory">
+          <option>家人</option><option>亲友</option><option>服务商</option>
+          <option>紧急联系人</option><option>同事</option><option>其他</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>电话（可多个，逗号分隔）</label><input type="text" id="mPhone" placeholder="如 138****0001,010-12345678"></div>
+      <div class="field"><label>微信</label><input type="text" id="mWechat" placeholder="微信号"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>邮箱</label><input type="text" id="mEmail" placeholder="电子邮箱"></div>
+      <div class="field"><label>关系 / 角色</label><input type="text" id="mRelation" placeholder="如 户主 / 签约医生"></div>
+    </div>
+    <div class="field"><label>单位 / 店铺</label><input type="text" id="mOrg" placeholder="如 小区物业"></div>
+    <div class="field"><label>地址</label><input type="text" id="mAddress" placeholder="单位或居住地址"></div>
+    <div class="field"><label>备注</label><textarea id="mNotes" placeholder="工作时间、注意事项等"></textarea></div>
+    <div class="acts">
+      <button class="btn" id="mSave">💾 保存</button>
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mDelete" style="display:none">🗑 删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/apps/contacts/api';
+const $ = (id) => document.getElementById(id);
+const banner = $('banner');
+function showBanner(m){ banner.textContent=m; banner.style.display='block'; }
+function hideBanner(){ banner.style.display='none'; }
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+let contacts = [];
+let editingId = null;
+
+async function load(){
+  const q=$('search').value.trim(), c=$('filterCategory').value;
+  const qs=[]; if(q) qs.push('q='+encodeURIComponent(q)); if(c) qs.push('category='+encodeURIComponent(c));
+  try{
+    contacts = await api('/contacts'+(qs.length?'?'+qs.join('&'):''));
+    hideBanner();
+  }catch(e){
+    contacts=[]; showBanner('⚠️ 无法连接后端 API（此应用需以 docker 集成模式启动，含 contacts-api 后端与 contacts 数据库）。');
+  }
+  render();
+}
+async function loadStats(){
+  try{
+    const st=await api('/stats');
+    $('stats').innerHTML = statBox(st.total,'联系人总数');
+  }catch(e){}
+}
+async function loadCategories(){
+  try{
+    const cs=await api('/categories');
+    const sel=$('filterCategory');
+    cs.forEach(x=>{
+      const o=document.createElement('option'); o.value=x.category; o.textContent=x.category+' ('+x.count+')'; sel.appendChild(o);
+    });
+  }catch(e){}
+}
+function statBox(n,l,color){
+  return '<div class="stat"><div class="n" style="color:'+(color||'var(--accent)')+'">'+n+'</div><div class="l">'+l+'</div></div>';
+}
+function render(){
+  const box=$('list'); box.innerHTML='';
+  if(!contacts.length){ box.innerHTML='<div class="empty">还没有联系人。<br>点击右上角「＋ 新增联系人」，登记家人、亲友、服务商与紧急联系人，找号码不再翻聊天记录。</div>'; return; }
+  contacts.forEach(c=>{
+    const el=document.createElement('div'); el.className='card';
+    const meta=[];
+    if(c.phone) meta.push('📞 '+c.phone);
+    if(c.wechat) meta.push('💬 '+c.wechat);
+    if(c.organization) meta.push('🏢 '+c.organization);
+    if(c.relation) meta.push('🔗 '+c.relation);
+    el.innerHTML =
+      '<div class="top"><div class="title"></div><span class="badge"></span></div>'+
+      (meta.length?'<div class="meta"></div>':'')+
+      (c.address?'<div class="meta"></div>':'')+
+      (c.email?'<div class="meta"></div>':'')+
+      (c.notes?'<div class="meta" style="margin-top:4px"></div>':'');
+    el.querySelector('.title').textContent=c.name;
+    el.querySelector('.badge').textContent=c.category;
+    const metas=el.querySelectorAll('.meta');
+    let i=0;
+    if(meta.length) metas[i++].textContent=meta.join(' · ');
+    if(c.address) metas[i++].textContent='📍 '+c.address;
+    if(c.email) metas[i++].textContent='✉️ '+c.email;
+    if(c.notes) metas[i++].textContent='📝 '+c.notes;
+    el.onclick=()=>openModal(c);
+    box.appendChild(el);
+  });
+}
+function openModal(c){
+  editingId = c ? c.id : null;
+  $('modalTitle').textContent = c ? '编辑联系人' : '新增联系人';
+  $('mName').value = c?(c.name||''):'';
+  $('mCategory').value = c?(c.category||'其他'):'其他';
+  $('mPhone').value = c?(c.phone||''):'';
+  $('mWechat').value = c?(c.wechat||''):'';
+  $('mEmail').value = c?(c.email||''):'';
+  $('mRelation').value = c?(c.relation||''):'';
+  $('mOrg').value = c?(c.organization||''):'';
+  $('mAddress').value = c?(c.address||''):'';
+  $('mNotes').value = c?(c.notes||''):'';
+  $('mDelete').style.display = c?'inline-block':'none';
+  $('modal').classList.add('show');
+}
+$('addBtn').onclick=()=>openModal(null);
+$('mCancel').onclick=()=>$('modal').classList.remove('show');
+$('modal').addEventListener('click',(e)=>{ if(e.target===$('modal')) $('modal').classList.remove('show'); });
+$('mSave').onclick=async()=>{
+  const payload={
+    name:$('mName').value.trim(), category:$('mCategory').value,
+    phone:$('mPhone').value.trim(), wechat:$('mWechat').value.trim(),
+    email:$('mEmail').value.trim(), relation:$('mRelation').value.trim(),
+    organization:$('mOrg').value.trim(), address:$('mAddress').value.trim(),
+    notes:$('mNotes').value.trim()
+  };
+  if(!payload.name){ showBanner('姓名必填'); return; }
+  try{
+    if(editingId) await api('/contacts/'+editingId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    else await api('/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    $('modal').classList.remove('show'); await load(); await loadStats(); await loadCategories();
+  }catch(e){ showBanner('保存失败：'+e.message); }
+};
+$('mDelete').onclick=async()=>{
+  if(!editingId) return;
+  if(!confirm('删除该联系人？')) return;
+  try{ await api('/contacts/'+editingId,{method:'DELETE'}); $('modal').classList.remove('show'); await load(); await loadStats(); await loadCategories(); }
+  catch(e){ showBanner('删除失败：'+e.message); }
+};
+$('search').oninput=load;
+$('filterCategory').onchange=load;
+loadCategories(); loadStats(); load();
+</script>
+</body>
+</html>
