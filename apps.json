@@ -11,7 +11,7 @@
       "icon": "🏠",
       "path": "/apps/home/",
       "standalone": "直接打开 apps/home/index.html，或在仓库根目录运行 python -m http.server 后访问 /apps/home/",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "music",
@@ -20,7 +20,7 @@
       "icon": "🎵",
       "path": "/apps/music/",
       "standalone": "电台可直开 apps/music/index.html；本地/NAS 音乐库需 docker 集成模式（后端扫描文件）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "wiki",
@@ -29,7 +29,7 @@
       "icon": "📖",
       "path": "/apps/wiki/",
       "standalone": "需 docker 集成模式（依赖 wiki-api 后端与 wiki 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "album",
@@ -38,7 +38,7 @@
       "icon": "📷",
       "path": "/apps/album/",
       "standalone": "需 docker 集成模式（依赖 album-api 后端与 album 数据库、服务器文件存储）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "calendar",
@@ -47,7 +47,7 @@
       "icon": "📅",
       "path": "/apps/calendar/",
       "standalone": "需 docker 集成模式（依赖 calendar-api 后端与 calendar 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "carlog",
@@ -56,7 +56,7 @@
       "icon": "🚗",
       "path": "/apps/carlog/",
       "standalone": "需 docker 集成模式（依赖 carlog-api 后端与 carlog 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "pantry",
@@ -65,7 +65,7 @@
       "icon": "🛒",
       "path": "/apps/pantry/",
       "standalone": "需 docker 集成模式（依赖 pantry-api 后端与 pantry 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "board",
@@ -74,7 +74,7 @@
       "icon": "📌",
       "path": "/apps/board/",
       "standalone": "需 docker 集成模式（依赖 board-api 后端与 board 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "docs",
@@ -83,7 +83,7 @@
       "icon": "📁",
       "path": "/apps/docs/",
       "standalone": "需 docker 集成模式（依赖 docs-api 后端、docs 数据库与服务器文件存储）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "subs",
@@ -92,7 +92,7 @@
       "icon": "💳",
       "path": "/apps/subs/",
       "standalone": "需 docker 集成模式（依赖 subs-api 后端与 subs 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "tasks",
@@ -101,7 +101,7 @@
       "icon": "✅",
       "path": "/apps/tasks/",
       "standalone": "需 docker 集成模式（依赖 tasks-api 后端与 tasks 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "health",
@@ -110,7 +110,7 @@
       "icon": "🩺",
       "path": "/apps/health/",
       "standalone": "需 docker 集成模式（依赖 health-api 后端与 health 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "recipes",
@@ -119,7 +119,7 @@
       "icon": "🍳",
       "path": "/apps/recipes/",
       "standalone": "需 docker 集成模式（依赖 recipes-api 后端与 recipes 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "menu",
@@ -128,7 +128,7 @@
       "icon": "🍽",
       "path": "/apps/menu/",
       "standalone": "需 docker 集成模式（依赖 menu-api 后端与 menu 数据库；联动 pantry 购物清单）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "ledger",
@@ -137,7 +137,7 @@
       "icon": "💰",
       "path": "/apps/ledger/",
       "standalone": "需 docker 集成模式（依赖 ledger-api 后端与 ledger 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "assets",
@@ -146,7 +146,7 @@
       "icon": "🔧",
       "path": "/apps/assets/",
       "standalone": "需 docker 集成模式（依赖 assets-api 后端与 assets 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "books",
@@ -155,7 +155,7 @@
       "icon": "📚",
       "path": "/apps/books/",
       "standalone": "需 docker 集成模式（依赖 books-api 后端与 books 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "pets",
@@ -164,7 +164,7 @@
       "icon": "🐾",
       "path": "/apps/pets/",
       "standalone": "需 docker 集成模式（依赖 pets-api 后端与 pets 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "vault",
@@ -173,7 +173,7 @@
       "icon": "🔐",
       "path": "/apps/vault/",
       "standalone": "需 docker 集成模式（依赖 vault-api 后端与 vault 数据库；密钥在 ./data/vault）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "medkit",
@@ -182,7 +182,7 @@
       "icon": "💊",
       "path": "/apps/medkit/",
       "standalone": "需 docker 集成模式（依赖 medkit-api 后端与 medkit 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "films",
@@ -191,7 +191,7 @@
       "icon": "🎬",
       "path": "/apps/films/",
       "standalone": "需 docker 集成模式（依赖 films-api 后端与 films 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "travel",
@@ -200,7 +200,7 @@
       "icon": "✈️",
       "path": "/apps/travel/",
       "standalone": "需 docker 集成模式（依赖 travel-api 后端与 travel 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "plants",
@@ -209,7 +209,7 @@
       "icon": "🌿",
       "path": "/apps/plants/",
       "standalone": "需 docker 集成模式（依赖 plants-api 后端与 plants 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "homeenv",
@@ -218,7 +218,7 @@
       "icon": "🌡️",
       "path": "/apps/homeenv/",
       "standalone": "需 docker 集成模式（依赖 homeenv-api 后端与 homeenv 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "repair",
@@ -227,7 +227,7 @@
       "icon": "🔧",
       "path": "/apps/repair/",
       "standalone": "需 docker 集成模式（依赖 repair-api 后端与 repair 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "growth",
@@ -236,7 +236,7 @@
       "icon": "🧸",
       "path": "/apps/growth/",
       "standalone": "需 docker 集成模式（依赖 growth-api 后端与 growth 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "energy",
@@ -245,7 +245,7 @@
       "icon": "⚡",
       "path": "/apps/energy/",
       "standalone": "需 docker 集成模式（依赖 energy-api 后端与 energy 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "insurance",
@@ -254,7 +254,7 @@
       "icon": "🛡️",
       "path": "/apps/insurance/",
       "standalone": "需 docker 集成模式（依赖 insurance-api 后端与 insurance 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "certs",
@@ -263,7 +263,7 @@
       "icon": "🪪",
       "path": "/apps/certs/",
       "standalone": "需 docker 集成模式（依赖 certs-api 后端与 certs 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "meds",
@@ -272,7 +272,7 @@
       "icon": "🔔",
       "path": "/apps/meds/",
       "standalone": "需 docker 集成模式（依赖 meds-api 后端与 meds 数据库）",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "contacts",
@@ -281,7 +281,7 @@
       "icon": "📇",
       "path": "/apps/contacts/",
       "standalone": "需 docker 集成模式（依赖 contacts-api 后端与 contacts 数据库）",
-      "enabled": true
+      "enabled": false
     }
   ]
 }
