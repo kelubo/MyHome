@@ -11,7 +11,7 @@
       "icon": "🏠",
       "path": "/apps/home/",
       "standalone": "直接打开 apps/home/index.html，或在仓库根目录运行 python -m http.server 后访问 /apps/home/",
-      "enabled": false
+      "enabled": true
     },
     {
       "id": "music",
